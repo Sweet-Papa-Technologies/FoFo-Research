@@ -1,0 +1,51 @@
+research:
+  maxIterations: 5
+  maxParallelSearches: 10
+  depthFirstSearch: true
+  followLinks: true
+  maxLinksPerPage: 3
+  informationGainThreshold: 0.2
+
+models:
+  primary:
+    provider: "anthropic"
+    model: "claude-3.7-sonnet"
+    temperature: 0.3
+    top_p: 0.95
+    max_tokens: 4000
+  
+  fallback:
+    provider: "local"
+    model: "gemma3-27b"
+    temperature: 0.5
+    top_p: 0.9
+    max_tokens: 2000
+
+  vision:
+    provider: "openai"
+    model: "gpt-4o"
+    temperature: 0.2
+    max_tokens: 1000
+
+search:
+  engine: "duckduckgo"
+  resultsPerQuery: 8
+  domainFilters:
+    include:
+      - ".edu"
+      - ".gov"
+      - ".org"
+    exclude:
+      - "pinterest.com"
+      - "quora.com"
+
+reporting:
+  format: "markdown"
+  includeSources: true
+  summarizeSources: true
+  maxReportLength: 5000
+
+system:
+  maxConcurrentJobs: 5
+  storageDirectory: "./data"
+  loggingLevel: "info"

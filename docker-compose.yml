@@ -1,0 +1,40 @@
+version: '3'
+
+services:
+  web-scraper-api:
+    env_file:
+      - .env
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - MAX_CONCURRENT_JOBS=5
+    volumes:
+      - research-data:/app/data
+      - ./api/src:/app/src
+      - ./api/config:/app/config
+    restart: unless-stopped
+    command: npm run dev
+
+  web-scraper-gui:
+    build:
+      context: ./gui
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - NODE_ENV=development
+    volumes:
+      - ./gui/src:/app/src
+      - ./gui/public:/app/public
+    depends_on:
+      - web-scraper-api
+    restart: unless-stopped
+    command: npm run dev
+
+volumes:
+  research-data:

@@ -14,7 +14,36 @@ declare module 'vue' {
 // good idea to move this instance creation inside of the
 // "export default () => {}" function below (which runs individually
 // for each client)
-const api = axios.create({ baseURL: 'https://api.example.com' });
+
+// Using localhost:3000 for development
+const baseURL = process.env.NODE_ENV === 'production' 
+  ? '/api' // In production, use relative path for API proxy
+  : 'http://localhost:3000/api'; // In development, point to the API server
+
+const api = axios.create({ baseURL });
+
+// Add a request interceptor
+api.interceptors.request.use(
+  (config) => {
+    // You can add auth tokens or other headers here
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
+// Add a response interceptor
+api.interceptors.response.use(
+  (response) => {
+    return response;
+  },
+  (error) => {
+    // Handle errors globally (e.g., redirect to login page on 401)
+    console.error('API Error:', error.response);
+    return Promise.reject(error);
+  }
+);
 
 export default defineBoot(({ app }) => {
   // for use inside Vue files (Options API) through this.$axios and this.$api

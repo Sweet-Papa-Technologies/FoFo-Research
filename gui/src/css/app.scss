@@ -1,1 +1,114 @@
 // app global css in SCSS form
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700&display=swap');
+
+body {
+  font-family: 'Nunito', sans-serif;
+}
+
+.page-container {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.text-h1, .text-h2, .text-h3, .text-h4, .text-h5, .text-h6 {
+  margin-bottom: 16px;
+  font-weight: 600;
+}
+
+.card-dark {
+  background-color: rgba(30, 30, 46, 0.7);
+  backdrop-filter: blur(10px);
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+.bg-gradient {
+  background: linear-gradient(135deg, $primary, $secondary);
+}
+
+.scrollable {
+  overflow-y: auto;
+  max-height: 80vh;
+}
+
+// Emoji styles
+.emoji {
+  font-size: 1.2em;
+  margin-right: 8px;
+  vertical-align: middle;
+}
+
+// Markdown content styles
+.markdown-content {
+  h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+    margin-top: 24px;
+    margin-bottom: 16px;
+  }
+
+  h1 {
+    font-size: 2rem;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 8px;
+  }
+
+  h2 {
+    font-size: 1.6rem;
+  }
+
+  h3 {
+    font-size: 1.3rem;
+  }
+
+  p {
+    margin: 16px 0;
+    line-height: 1.6;
+  }
+
+  code {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: monospace;
+  }
+
+  pre {
+    background-color: rgba(0, 0, 0, 0.2);
+    padding: 16px;
+    border-radius: 4px;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+
+  blockquote {
+    border-left: 4px solid $primary;
+    padding-left: 16px;
+    margin-left: 0;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  ul, ol {
+    padding-left: 24px;
+    margin: 16px 0;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    
+    th, td {
+      padding: 8px 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    th {
+      background-color: rgba(0, 0, 0, 0.2);
+    }
+    
+    tr:nth-child(even) {
+      background-color: rgba(0, 0, 0, 0.1);
+    }
+  }
+}

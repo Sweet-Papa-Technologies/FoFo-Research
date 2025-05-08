@@ -1,6 +1,11 @@
 import { defineStore } from '#q-app/wrappers'
 import { createPinia } from 'pinia'
 
+// Export individual stores
+export { useResearchStore } from './research';
+export { useReportStore } from './report';
+export { useConfigStore } from './config';
+
 /*
  * When adding new properties to stores, you should also
  * extend the `PiniaCustomProperties` interface.

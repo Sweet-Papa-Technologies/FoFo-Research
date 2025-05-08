@@ -1,6 +1,6 @@
 <template>
-  <q-layout view="lHh Lpr lFf">
-    <q-header elevated>
+  <q-layout view="lHh Lpr lFf" class="bg-dark">
+    <q-header elevated class="bg-dark">
       <q-toolbar>
         <q-btn
           flat
@@ -11,11 +11,12 @@
           @click="toggleLeftDrawer"
         />
 
-        <q-toolbar-title>
-          Quasar App
+        <q-toolbar-title class="text-h5">
+          <q-icon name="auto_awesome" size="md" class="q-mr-md" />
+          FoFo Research
         </q-toolbar-title>
 
-        <div>Quasar v{{ $q.version }}</div>
+        <q-btn flat round icon="dark_mode" aria-label="Dark Mode" />
       </q-toolbar>
     </q-header>
 
@@ -23,16 +24,15 @@
       v-model="leftDrawerOpen"
       show-if-above
       bordered
+      class="bg-dark-page text-white"
     >
       <q-list>
-        <q-item-label
-          header
-        >
-          Essential Links
+        <q-item-label header class="text-grey-5">
+          Navigation
         </q-item-label>
 
         <EssentialLink
-          v-for="link in linksList"
+          v-for="link in navigationLinks"
           :key="link.title"
           v-bind="link"
         />
@@ -46,51 +46,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref, onMounted } from 'vue';
 import EssentialLink, { type EssentialLinkProps } from 'components/EssentialLink.vue';
+import { useQuasar } from 'quasar';
 
-const linksList: EssentialLinkProps[] = [
+const $q = useQuasar();
+
+const navigationLinks: EssentialLinkProps[] = [
   {
-    title: 'Docs',
-    caption: 'quasar.dev',
-    icon: 'school',
-    link: 'https://quasar.dev'
+    title: 'Home',
+    caption: 'Application Dashboard',
+    icon: 'home',
+    link: '/'
   },
   {
-    title: 'Github',
-    caption: 'github.com/quasarframework',
-    icon: 'code',
-    link: 'https://github.com/quasarframework'
+    title: 'New Research',
+    caption: 'Start a new research project',
+    icon: 'science',
+    link: '/research/new'
   },
   {
-    title: 'Discord Chat Channel',
-    caption: 'chat.quasar.dev',
-    icon: 'chat',
-    link: 'https://chat.quasar.dev'
+    title: 'Reports',
+    caption: 'View completed research reports',
+    icon: 'summarize',
+    link: '/reports'
   },
   {
-    title: 'Forum',
-    caption: 'forum.quasar.dev',
-    icon: 'record_voice_over',
-    link: 'https://forum.quasar.dev'
+    title: 'History',
+    caption: 'View research history',
+    icon: 'history',
+    link: '/history'
   },
   {
-    title: 'Twitter',
-    caption: '@quasarframework',
-    icon: 'rss_feed',
-    link: 'https://twitter.quasar.dev'
-  },
-  {
-    title: 'Facebook',
-    caption: '@QuasarFramework',
-    icon: 'public',
-    link: 'https://facebook.quasar.dev'
-  },
-  {
-    title: 'Quasar Awesome',
-    caption: 'Community Quasar projects',
-    icon: 'favorite',
-    link: 'https://awesome.quasar.dev'
+    title: 'Settings',
+    caption: 'Configure application settings',
+    icon: 'settings',
+    link: '/settings'
   }
 ];
 
@@ -99,4 +90,9 @@ const leftDrawerOpen = ref(false);
 function toggleLeftDrawer () {
   leftDrawerOpen.value = !leftDrawerOpen.value;
 }
+
+onMounted(() => {
+  // Enable dark mode by default
+  $q.dark.set(true);
+});
 </script>
