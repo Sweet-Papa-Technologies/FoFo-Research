@@ -24,16 +24,27 @@ export class ContentAgent {
       this.screenshotAnalyzerTool = new ScreenshotAnalyzerTool();
       this.credibilityEvaluatorTool = new CredibilityEvaluatorTool();
 
+      // Convert tools to the format expected by KaibanJS
+      const toolsForAgent = [
+        {
+          name: this.screenshotAnalyzerTool.name,
+          description: this.screenshotAnalyzerTool.description,
+          func: async (args: any) => this.screenshotAnalyzerTool._call(args)
+        },
+        {
+          name: this.credibilityEvaluatorTool.name,
+          description: this.credibilityEvaluatorTool.description,
+          func: async (args: any) => this.credibilityEvaluatorTool._call(args)
+        }
+      ];
+
       // Initialize the agent with the tools
       this.agent = new Agent({
         name: 'Visioneer',
         role: 'Content Analyst',
         goal: 'Extract and analyze information from web content screenshots, evaluate credibility, and identify key insights',
         background: 'Expert in visual content analysis, information extraction, and source evaluation',
-        tools: [
-          this.screenshotAnalyzerTool,
-          this.credibilityEvaluatorTool
-        ],
+        tools: toolsForAgent as any,
         llmConfig: llmConfig
       });
 

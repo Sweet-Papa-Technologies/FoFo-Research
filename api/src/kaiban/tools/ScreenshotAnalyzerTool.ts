@@ -1,22 +1,16 @@
-import { Tool } from "@langchain/core/tools";
-import { z } from "zod";
+import { ToolBase } from "./ToolBase";
 import { captureService } from "../../services/captureService";
 
 /**
  * Custom tool for analyzing screenshots captured during research
  * Extracts text, metadata, and visual information from screenshots
  */
-export class ScreenshotAnalyzerTool extends Tool {
+export class ScreenshotAnalyzerTool extends ToolBase {
   constructor() {
-    super({
-      name: "screenshot_analyzer",
-      description: "Analyzes a screenshot to extract text, metadata, and visual information",
-      schema: z.object({
-        screenshotId: z.string().describe("The ID of the screenshot to analyze"),
-        analysisType: z.enum(["full", "text_only", "metadata_only", "visual_elements"])
-          .describe("The type of analysis to perform on the screenshot")
-      })
-    });
+    super(
+      "screenshot_analyzer",
+      "Analyzes a screenshot to extract text, metadata, and visual information"
+    );
   }
 
   async _call(input: { screenshotId: string; analysisType: "full" | "text_only" | "metadata_only" | "visual_elements" }) {
@@ -59,7 +53,7 @@ export class ScreenshotAnalyzerTool extends Tool {
             metadata,
             visualElements,
             screenshotId,
-            url: screenshotData.url
+            url: screenshotData?.metadata?.url || 'unknown'
           };
       }
 

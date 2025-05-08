@@ -24,16 +24,27 @@ export class SummaryAgent {
       this.qualityAssessorTool = new QualityAssessorTool();
       this.reportFormatterTool = new ReportFormatterTool();
 
+      // Convert tools to the format expected by KaibanJS
+      const toolsForAgent = [
+        {
+          name: this.qualityAssessorTool.name,
+          description: this.qualityAssessorTool.description,
+          func: async (args: any) => this.qualityAssessorTool._call(args)
+        },
+        {
+          name: this.reportFormatterTool.name,
+          description: this.reportFormatterTool.description,
+          func: async (args: any) => this.reportFormatterTool._call(args)
+        }
+      ];
+
       // Initialize the agent with the tools
       this.agent = new Agent({
         name: 'Synthesizer',
         role: 'Research Synthesizer',
         goal: 'Synthesize information from multiple sources into coherent, structured reports',
         background: 'Expert in information synthesis, knowledge distillation, and clear communication',
-        tools: [
-          this.qualityAssessorTool,
-          this.reportFormatterTool
-        ],
+        tools: toolsForAgent as any,
         llmConfig: llmConfig
       });
 

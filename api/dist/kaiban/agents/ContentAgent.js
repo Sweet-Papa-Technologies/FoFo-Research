@@ -18,16 +18,26 @@ class ContentAgent {
             // Initialize tools
             this.screenshotAnalyzerTool = new ScreenshotAnalyzerTool_1.ScreenshotAnalyzerTool();
             this.credibilityEvaluatorTool = new CredibilityEvaluatorTool_1.CredibilityEvaluatorTool();
+            // Convert tools to the format expected by KaibanJS
+            const toolsForAgent = [
+                {
+                    name: this.screenshotAnalyzerTool.name,
+                    description: this.screenshotAnalyzerTool.description,
+                    func: async (args) => this.screenshotAnalyzerTool._call(args)
+                },
+                {
+                    name: this.credibilityEvaluatorTool.name,
+                    description: this.credibilityEvaluatorTool.description,
+                    func: async (args) => this.credibilityEvaluatorTool._call(args)
+                }
+            ];
             // Initialize the agent with the tools
             this.agent = new kaibanjs_1.Agent({
                 name: 'Visioneer',
                 role: 'Content Analyst',
                 goal: 'Extract and analyze information from web content screenshots, evaluate credibility, and identify key insights',
                 background: 'Expert in visual content analysis, information extraction, and source evaluation',
-                tools: [
-                    this.screenshotAnalyzerTool,
-                    this.credibilityEvaluatorTool
-                ],
+                tools: toolsForAgent,
                 llmConfig: llmConfig_1.llmConfig
             });
             logger_1.logger.info('ContentAgent initialized successfully');

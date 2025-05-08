@@ -29,7 +29,7 @@ export class KaibanJobService {
         topic: job.topic,
         maxSources: job.config.maxParallelSearches,
         maxDepth: job.config.maxIterations,
-        reportFormat: 'detailed',
+        reportFormat: 'detailed' as 'detailed',
         domainFilters: job.search.domainFilters,
         modelConfig: {
           provider: job.models.primary.provider,

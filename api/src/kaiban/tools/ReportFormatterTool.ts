@@ -1,47 +1,15 @@
-import { Tool } from "@langchain/core/tools";
-import { z } from "zod";
+import { ToolBase } from "./ToolBase";
 
 /**
  * Custom tool for formatting research reports
  * Converts research findings into structured reports with various template options
  */
-export class ReportFormatterTool extends Tool {
+export class ReportFormatterTool extends ToolBase {
   constructor() {
-    super({
-      name: "report_formatter",
-      description: "Formats research findings into structured reports with template options",
-      schema: z.object({
-        title: z.string().describe("The title of the report"),
-        sections: z.array(
-          z.object({
-            heading: z.string(),
-            content: z.string(),
-            subsections: z.array(
-              z.object({
-                heading: z.string().optional(),
-                content: z.string()
-              })
-            ).optional()
-          })
-        ).describe("Array of report sections with headings and content"),
-        sources: z.array(
-          z.object({
-            title: z.string().optional(),
-            url: z.string(),
-            author: z.string().optional(),
-            publishDate: z.string().optional(),
-            credibilityScore: z.number().optional()
-          })
-        ).optional().describe("Sources used in the research"),
-        formatOptions: z.object({
-          template: z.enum(["academic", "business", "summary", "detailed", "web"]).optional(),
-          includeTableOfContents: z.boolean().optional(),
-          includeCoverPage: z.boolean().optional(),
-          includeExecutiveSummary: z.boolean().optional(),
-          format: z.enum(["markdown", "html", "json"]).optional()
-        }).optional().describe("Formatting options for the report")
-      })
-    });
+    super(
+      "report_formatter",
+      "Formats research findings into structured reports with template options"
+    );
   }
 
   async _call(input: { 

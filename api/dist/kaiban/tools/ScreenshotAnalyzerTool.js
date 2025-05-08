@@ -1,24 +1,15 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ScreenshotAnalyzerTool = void 0;
-const tools_1 = require("@langchain/core/tools");
-const zod_1 = require("zod");
+const ToolBase_1 = require("./ToolBase");
 const captureService_1 = require("../../services/captureService");
 /**
  * Custom tool for analyzing screenshots captured during research
  * Extracts text, metadata, and visual information from screenshots
  */
-class ScreenshotAnalyzerTool extends tools_1.Tool {
+class ScreenshotAnalyzerTool extends ToolBase_1.ToolBase {
     constructor() {
-        super({
-            name: "screenshot_analyzer",
-            description: "Analyzes a screenshot to extract text, metadata, and visual information",
-            schema: zod_1.z.object({
-                screenshotId: zod_1.z.string().describe("The ID of the screenshot to analyze"),
-                analysisType: zod_1.z.enum(["full", "text_only", "metadata_only", "visual_elements"])
-                    .describe("The type of analysis to perform on the screenshot")
-            })
-        });
+        super("screenshot_analyzer", "Analyzes a screenshot to extract text, metadata, and visual information");
     }
     async _call(input) {
         try {
@@ -56,7 +47,7 @@ class ScreenshotAnalyzerTool extends tools_1.Tool {
                         metadata,
                         visualElements,
                         screenshotId,
-                        url: screenshotData.url
+                        url: screenshotData?.metadata?.url || 'unknown'
                     };
             }
             return JSON.stringify(result);

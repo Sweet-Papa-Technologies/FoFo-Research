@@ -1,29 +1,15 @@
-import { Tool } from "@langchain/core/tools";
-import { z } from "zod";
+import { ToolBase } from "./ToolBase";
 
 /**
  * Custom tool for assessing the quality and completeness of research
  * Evaluates research depth, breadth, and reliability
  */
-export class QualityAssessorTool extends Tool {
+export class QualityAssessorTool extends ToolBase {
   constructor() {
-    super({
-      name: "quality_assessor",
-      description: "Assesses the quality, depth, and completeness of research",
-      schema: z.object({
-        topic: z.string().describe("The research topic being assessed"),
-        sources: z.array(
-          z.object({
-            url: z.string(),
-            title: z.string().optional(),
-            credibilityScore: z.number().optional(),
-            sourceType: z.string().optional()
-          })
-        ).describe("Array of sources used in the research"),
-        keyFindings: z.array(z.string()).describe("Key findings or conclusions from the research"),
-        researchGoal: z.string().optional().describe("Optional statement of the research goal or question")
-      })
-    });
+    super(
+      "quality_assessor",
+      "Assesses the quality, depth, and completeness of research"
+    );
   }
 
   async _call(input: { 

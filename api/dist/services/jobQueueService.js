@@ -131,10 +131,16 @@ class JobQueueService {
             models: {
                 primary: {
                     ...job_1.DEFAULT_MODEL_SETTINGS,
-                    ...jobRequest.models?.primary
+                    ...(jobRequest.models?.primary || {})
                 },
-                fallback: jobRequest.models?.fallback,
-                vision: jobRequest.models?.vision
+                fallback: jobRequest.models?.fallback ? {
+                    ...job_1.DEFAULT_MODEL_SETTINGS,
+                    ...jobRequest.models.fallback
+                } : undefined,
+                vision: jobRequest.models?.vision ? {
+                    ...job_1.DEFAULT_MODEL_SETTINGS,
+                    ...jobRequest.models.vision
+                } : undefined
             },
             progress: {
                 currentIteration: 0,

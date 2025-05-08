@@ -137,7 +137,11 @@ class JobQueueService {
     topic: string;
     config?: Partial<ResearchJob['config']>;
     search?: Partial<ResearchJob['search']>;
-    models?: Partial<ResearchJob['models']>;
+    models?: {
+      primary?: Partial<ResearchJob['models']['primary']>;
+      fallback?: Partial<ResearchJob['models']['primary']>;
+      vision?: Partial<ResearchJob['models']['primary']>;
+    };
     priority?: JobPriority;
   }): Promise<ResearchJob> {
     const jobId = uuidv4();
@@ -159,10 +163,16 @@ class JobQueueService {
       models: {
         primary: {
           ...DEFAULT_MODEL_SETTINGS,
-          ...jobRequest.models?.primary
+          ...(jobRequest.models?.primary || {})
         },
-        fallback: jobRequest.models?.fallback,
-        vision: jobRequest.models?.vision
+        fallback: jobRequest.models?.fallback ? {
+          ...DEFAULT_MODEL_SETTINGS,
+          ...jobRequest.models.fallback
+        } : undefined,
+        vision: jobRequest.models?.vision ? {
+          ...DEFAULT_MODEL_SETTINGS,
+          ...jobRequest.models.vision
+        } : undefined
       },
       progress: {
         currentIteration: 0,

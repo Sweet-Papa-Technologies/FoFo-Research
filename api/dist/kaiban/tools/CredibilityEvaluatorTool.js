@@ -1,23 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CredibilityEvaluatorTool = void 0;
-const tools_1 = require("@langchain/core/tools");
-const zod_1 = require("zod");
+const ToolBase_1 = require("./ToolBase");
 /**
  * Custom tool for evaluating the credibility of sources
  * Assesses reliability, reputation, and quality of research sources
  */
-class CredibilityEvaluatorTool extends tools_1.Tool {
+class CredibilityEvaluatorTool extends ToolBase_1.ToolBase {
     constructor() {
-        super({
-            name: "credibility_evaluator",
-            description: "Evaluates the credibility of research sources based on various factors",
-            schema: zod_1.z.object({
-                url: zod_1.z.string().describe("URL of the source to evaluate"),
-                content: zod_1.z.string().optional().describe("Optional content extract from the source"),
-                metadata: zod_1.z.record(zod_1.z.string(), zod_1.z.any()).optional().describe("Optional metadata about the source")
-            })
-        });
+        super("credibility_evaluator", "Evaluates the credibility of research sources based on various factors");
     }
     async _call(input) {
         try {

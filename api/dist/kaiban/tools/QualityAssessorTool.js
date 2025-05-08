@@ -1,29 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QualityAssessorTool = void 0;
-const tools_1 = require("@langchain/core/tools");
-const zod_1 = require("zod");
+const ToolBase_1 = require("./ToolBase");
 /**
  * Custom tool for assessing the quality and completeness of research
  * Evaluates research depth, breadth, and reliability
  */
-class QualityAssessorTool extends tools_1.Tool {
+class QualityAssessorTool extends ToolBase_1.ToolBase {
     constructor() {
-        super({
-            name: "quality_assessor",
-            description: "Assesses the quality, depth, and completeness of research",
-            schema: zod_1.z.object({
-                topic: zod_1.z.string().describe("The research topic being assessed"),
-                sources: zod_1.z.array(zod_1.z.object({
-                    url: zod_1.z.string(),
-                    title: zod_1.z.string().optional(),
-                    credibilityScore: zod_1.z.number().optional(),
-                    sourceType: zod_1.z.string().optional()
-                })).describe("Array of sources used in the research"),
-                keyFindings: zod_1.z.array(zod_1.z.string()).describe("Key findings or conclusions from the research"),
-                researchGoal: zod_1.z.string().optional().describe("Optional statement of the research goal or question")
-            })
-        });
+        super("quality_assessor", "Assesses the quality, depth, and completeness of research");
     }
     async _call(input) {
         try {

@@ -1,4 +1,4 @@
-import puppeteer, { Browser, Page } from 'puppeteer';
+import puppeteer, { Browser, Page, PuppeteerLifeCycleEvent } from 'puppeteer';
 import fs from 'fs';
 import path from 'path';
 import { logger } from '../utils/logger';
@@ -17,7 +17,7 @@ interface BrowserOptions {
 
 interface NavigationOptions {
   timeout?: number;
-  waitUntil?: puppeteer.PuppeteerLifeCycleEvent | puppeteer.PuppeteerLifeCycleEvent[];
+  waitUntil?: PuppeteerLifeCycleEvent | PuppeteerLifeCycleEvent[];
   retries?: number;
   retryDelay?: number;
 }

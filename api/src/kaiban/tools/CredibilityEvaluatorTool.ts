@@ -1,21 +1,15 @@
-import { Tool } from "@langchain/core/tools";
-import { z } from "zod";
+import { ToolBase } from "./ToolBase";
 
 /**
  * Custom tool for evaluating the credibility of sources
  * Assesses reliability, reputation, and quality of research sources
  */
-export class CredibilityEvaluatorTool extends Tool {
+export class CredibilityEvaluatorTool extends ToolBase {
   constructor() {
-    super({
-      name: "credibility_evaluator",
-      description: "Evaluates the credibility of research sources based on various factors",
-      schema: z.object({
-        url: z.string().describe("URL of the source to evaluate"),
-        content: z.string().optional().describe("Optional content extract from the source"),
-        metadata: z.record(z.string(), z.any()).optional().describe("Optional metadata about the source")
-      })
-    });
+    super(
+      "credibility_evaluator",
+      "Evaluates the credibility of research sources based on various factors"
+    );
   }
 
   async _call(input: { url: string; content?: string; metadata?: Record<string, any> }) {

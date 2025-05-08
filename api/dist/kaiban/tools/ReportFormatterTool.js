@@ -1,43 +1,14 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportFormatterTool = void 0;
-const tools_1 = require("@langchain/core/tools");
-const zod_1 = require("zod");
+const ToolBase_1 = require("./ToolBase");
 /**
  * Custom tool for formatting research reports
  * Converts research findings into structured reports with various template options
  */
-class ReportFormatterTool extends tools_1.Tool {
+class ReportFormatterTool extends ToolBase_1.ToolBase {
     constructor() {
-        super({
-            name: "report_formatter",
-            description: "Formats research findings into structured reports with template options",
-            schema: zod_1.z.object({
-                title: zod_1.z.string().describe("The title of the report"),
-                sections: zod_1.z.array(zod_1.z.object({
-                    heading: zod_1.z.string(),
-                    content: zod_1.z.string(),
-                    subsections: zod_1.z.array(zod_1.z.object({
-                        heading: zod_1.z.string().optional(),
-                        content: zod_1.z.string()
-                    })).optional()
-                })).describe("Array of report sections with headings and content"),
-                sources: zod_1.z.array(zod_1.z.object({
-                    title: zod_1.z.string().optional(),
-                    url: zod_1.z.string(),
-                    author: zod_1.z.string().optional(),
-                    publishDate: zod_1.z.string().optional(),
-                    credibilityScore: zod_1.z.number().optional()
-                })).optional().describe("Sources used in the research"),
-                formatOptions: zod_1.z.object({
-                    template: zod_1.z.enum(["academic", "business", "summary", "detailed", "web"]).optional(),
-                    includeTableOfContents: zod_1.z.boolean().optional(),
-                    includeCoverPage: zod_1.z.boolean().optional(),
-                    includeExecutiveSummary: zod_1.z.boolean().optional(),
-                    format: zod_1.z.enum(["markdown", "html", "json"]).optional()
-                }).optional().describe("Formatting options for the report")
-            })
-        });
+        super("report_formatter", "Formats research findings into structured reports with template options");
     }
     async _call(input) {
         try {
