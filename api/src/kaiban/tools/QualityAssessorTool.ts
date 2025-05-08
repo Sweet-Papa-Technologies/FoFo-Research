@@ -21,8 +21,38 @@ export class QualityAssessorTool extends Tool {
 
   async _call(input: string): Promise<string> {
     try {
+      // Handle undefined or empty input
+      if (!input || input === "undefined") {
+        return JSON.stringify({
+          error: "Invalid input",
+          message: "Input must be a valid JSON string containing topic, sources, and keyFindings"
+        });
+      }
+      
       const parsedInput = JSON.parse(input);
       const { topic, sources, keyFindings, researchGoal } = parsedInput;
+      
+      // Validate required fields
+      if (!topic) {
+        return JSON.stringify({
+          error: "Missing topic",
+          message: "Research topic is required"
+        });
+      }
+      
+      if (!sources || !Array.isArray(sources) || sources.length === 0) {
+        return JSON.stringify({
+          error: "Invalid sources",
+          message: "Sources must be a non-empty array"
+        });
+      }
+      
+      if (!keyFindings || !Array.isArray(keyFindings) || keyFindings.length === 0) {
+        return JSON.stringify({
+          error: "Invalid keyFindings",
+          message: "Key findings must be a non-empty array"
+        });
+      }
       
       // Assess source diversity
       const sourceDiversity = this.assessSourceDiversity(sources);

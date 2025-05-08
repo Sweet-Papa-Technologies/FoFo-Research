@@ -22,8 +22,23 @@ export class ScreenshotAnalyzerTool extends Tool {
 
   async _call(input: string): Promise<string> {
     try {
+      // Handle undefined or empty input
+      if (!input || input === "undefined") {
+        return JSON.stringify({
+          error: "Invalid input",
+          message: "Input must be a valid JSON string containing screenshotId and analysisType"
+        });
+      }
+
       const parsedInput = JSON.parse(input);
       const { screenshotId, analysisType } = parsedInput;
+      
+      if (!screenshotId) {
+        return JSON.stringify({
+          error: "Missing screenshotId",
+          message: "A valid screenshotId is required"
+        });
+      }
       
       // Retrieve the screenshot using the capture service
       const screenshotData = await captureService.getScreenshot(screenshotId);

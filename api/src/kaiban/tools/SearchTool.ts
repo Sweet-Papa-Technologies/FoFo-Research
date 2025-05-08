@@ -23,24 +23,40 @@ export class SearchTool extends Tool {
 
   async _call(input: string): Promise<string> {
     try {
-      const parsedInput = JSON.parse(input);
-      const { query, maxResults = 5 } = parsedInput;
-      logger.info(`SearchTool executing search query: "${query}"`);
-      
-      try {
-        const results = await searchService.search(query, { maxResults });
-        return JSON.stringify(results);
-      } catch (error) {
-        logger.error(`Search error: ${error}`);
-        return JSON.stringify({ 
-          error: "Search failed", 
-          message: error instanceof Error ? error.message : String(error) 
+      // Handle undefined or empty input
+      if (!input || input === "undefined") {
+        logger.error("SearchTool received undefined or empty input");
+        return JSON.stringify({
+          error: "Invalid input",
+          message: "Search query is required"
         });
       }
+      
+      // Try to parse as JSON first
+      try {
+        const parsedInput = JSON.parse(input);
+        const { query, maxResults = 5 } = parsedInput;
+        
+        if (!query) {
+          return JSON.stringify({
+            error: "Missing query",
+            message: "Search query is required"
+          });
+        }
+        
+        logger.info(`SearchTool executing search query: "${query}"`);
+        const results = await searchService.search(query, { maxResults });
+        return JSON.stringify(results);
+      } catch (jsonError) {
+        // If JSON parsing fails, use the input directly as the query string
+        logger.info(`SearchTool using raw input as query: "${input}"`);
+        const results = await searchService.search(input, { maxResults: 5 });
+        return JSON.stringify(results);
+      }
     } catch (error) {
-      logger.error(`Error parsing input in SearchTool: ${error}`);
+      logger.error(`Error in SearchTool: ${error}`);
       return JSON.stringify({
-        error: "Failed to parse input",
+        error: "Search failed",
         message: error instanceof Error ? error.message : String(error)
       });
     }

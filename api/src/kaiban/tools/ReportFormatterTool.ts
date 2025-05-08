@@ -21,8 +21,31 @@ export class ReportFormatterTool extends Tool {
 
   async _call(input: string): Promise<string> {
     try {
+      // Handle undefined or empty input
+      if (!input || input === "undefined") {
+        return JSON.stringify({
+          error: "Invalid input",
+          message: "Input must be a valid JSON string containing title and sections"
+        });
+      }
+      
       const parsedInput = JSON.parse(input);
       const { title, sections, sources = [], formatOptions = {} } = parsedInput;
+      
+      // Validate required fields
+      if (!title) {
+        return JSON.stringify({
+          error: "Missing title",
+          message: "Report title is required"
+        });
+      }
+      
+      if (!sections || !Array.isArray(sections) || sections.length === 0) {
+        return JSON.stringify({
+          error: "Invalid sections",
+          message: "Sections must be a non-empty array"
+        });
+      }
       
       // Set default format options
       const options = {

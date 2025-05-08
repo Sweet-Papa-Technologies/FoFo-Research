@@ -21,8 +21,23 @@ export class CredibilityEvaluatorTool extends Tool {
 
   async _call(input: string): Promise<string> {
     try {
+      // Handle undefined or empty input
+      if (!input || input === "undefined") {
+        return JSON.stringify({
+          error: "Invalid input",
+          message: "Input must be a valid JSON string containing url and optional content/metadata"
+        });
+      }
+      
       const parsedInput = JSON.parse(input);
       const { url, content, metadata } = parsedInput;
+      
+      if (!url) {
+        return JSON.stringify({
+          error: "Missing url",
+          message: "A valid URL is required"
+        });
+      }
       
       // Domain credibility factors
       const credibilityFactors = this.analyzeDomainCredibility(url);
