@@ -50,27 +50,27 @@ export const useConfigStore = defineStore('config', {
   getters: {
     modelsByProvider: (state) => {
       const modelsByProvider: Record<string, typeof state.availableModels> = {};
-      
+
       state.availableModels.forEach(model => {
         if (!modelsByProvider[model.provider]) {
           modelsByProvider[model.provider] = [];
         }
         modelsByProvider[model.provider].push(model);
       });
-      
+
       return modelsByProvider;
     },
-    
+
     getModelById: (state) => (id: string) => {
       return state.availableModels.find(model => model.id === id) || null;
     },
-    
+
     getProviderById: (state) => (id: string) => {
       return state.availableProviders.find(provider => provider.id === id) || null;
     },
-    
+
     visionCapableModels: (state) => {
-      return state.availableModels.filter(model => 
+      return state.availableModels.filter(model =>
         model.capabilities.includes('vision')
       );
     }
@@ -80,18 +80,18 @@ export const useConfigStore = defineStore('config', {
     async fetchAvailableModels() {
       this.loading = true;
       this.error = null;
-      
+
       try {
         // This would be a real API call in production
         const response = await api.get('/api/config/models');
         const { providers } = response.data.data;
-        
+
         this.availableProviders = providers.map((provider: any) => ({
           id: provider.id,
           name: provider.name
         }));
-        
-        this.availableModels = providers.flatMap((provider: any) => 
+
+        this.availableModels = providers.flatMap((provider: any) =>
           provider.models.map((model: any) => ({
             id: model.id,
             provider: provider.id,
@@ -107,11 +107,11 @@ export const useConfigStore = defineStore('config', {
         this.loading = false;
       }
     },
-    
+
     async fetchSystemConfig() {
       this.loading = true;
       this.error = null;
-      
+
       try {
         // This would be a real API call in production
         const response = await api.get('/api/config');
@@ -123,11 +123,11 @@ export const useConfigStore = defineStore('config', {
         this.loading = false;
       }
     },
-    
+
     async updateSystemConfig(config: Partial<ConfigState['systemConfig']>) {
       this.loading = true;
       this.error = null;
-      
+
       try {
         // This would be a real API call in production
         const response = await api.put('/api/config', config);
@@ -141,14 +141,14 @@ export const useConfigStore = defineStore('config', {
         this.loading = false;
       }
     },
-    
+
     // Mock implementation for development without backend
     async _mockFetchAvailableModels() {
       this.loading = true;
-      
+
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800));
-      
+
       const mockProviders = [
         {
           id: 'anthropic',
@@ -163,14 +163,14 @@ export const useConfigStore = defineStore('config', {
           name: 'Google'
         },
         {
-          id: 'local',
-          name: 'Local Models'
+          id: 'openai',
+          name: 'LM Studio'
         }
       ];
-      
+
       const mockModels = [
         {
-          id: 'claude-3.7-sonnet',
+          id: 'gemma-3-27b-it-abliterated',
           provider: 'anthropic',
           name: 'Claude 3.7 Sonnet',
           capabilities: ['text', 'vision'],
@@ -223,7 +223,7 @@ export const useConfigStore = defineStore('config', {
         },
         {
           id: 'gemma3-27b',
-          provider: 'local',
+          provider: 'openai',
           name: 'Gemma3 27b',
           capabilities: ['text'],
           defaultParameters: {
@@ -234,7 +234,7 @@ export const useConfigStore = defineStore('config', {
         },
         {
           id: 'phi-4-reasoning',
-          provider: 'local',
+          provider: 'openai',
           name: 'Phi-4 Reasoning',
           capabilities: ['text'],
           defaultParameters: {
@@ -244,18 +244,18 @@ export const useConfigStore = defineStore('config', {
           }
         }
       ];
-      
+
       this.availableProviders = mockProviders;
       this.availableModels = mockModels;
       this.loading = false;
     },
-    
+
     async _mockFetchSystemConfig() {
       this.loading = true;
-      
+
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800));
-      
+
       this.systemConfig = {
         research: {
           maxIterations: 5,
@@ -267,13 +267,13 @@ export const useConfigStore = defineStore('config', {
         models: {
           primary: {
             provider: 'anthropic',
-            model: 'claude-3.7-sonnet',
+            model: 'gemma-3-27b-it-abliterated',
             temperature: 0.3,
             topP: 0.95,
             maxTokens: 4000
           },
           fallback: {
-            provider: 'local',
+            provider: 'openai',
             model: 'gemma3-27b',
             temperature: 0.5,
             topP: 0.9,
@@ -306,7 +306,7 @@ export const useConfigStore = defineStore('config', {
           loggingLevel: 'info'
         }
       };
-      
+
       this.loading = false;
     }
   }

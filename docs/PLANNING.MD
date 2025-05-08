@@ -37,7 +37,7 @@ To keep the tool versatile and to prevent web-scraping issues, the app will use 
 - Frontend should use Quasar v2 and Vue3 with Vite + TypeScript
 
 # Supported Models:
-- Local: Gemma3 27b, Phi-4 reasoning, other local models with vision support
+- Local: Gemma3 27b, Phi-4 reasoning, other LM Studio with vision support
 - OpenAI: GPT 4o, (other models not tested)
 - Anthropic: Claude 3.7 Sonnet, (other models not tested)
 - Google Gemini: Gemini 2.0 Flash, (other models not tested)

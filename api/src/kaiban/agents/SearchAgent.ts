@@ -52,14 +52,24 @@ export class SearchAgent {
         }
       };
 
-      // Initialize the agent with the search tool
+      // Create a custom llmConfig with the provided model parameters if available
+      const agentLlmConfig = {
+        provider: config?.provider || llmConfig.provider,
+        model: config?.model || llmConfig.model,
+        apiKey: config?.apiKey || llmConfig.apiKey,
+        apiBaseUrl: llmConfig.apiBaseUrl
+      };
+      
+      logger.info(`SearchAgent initializing with model: ${agentLlmConfig.model}, provider: ${agentLlmConfig.provider}`);
+      
+      // Initialize the agent with the search tool and custom llmConfig
       this.agent = new Agent({
         name: 'Scout',
         role: 'Search Specialist',
         goal: 'Find the most relevant information about the research topic and identify valuable sources',
         background: 'Expert in search query formulation, source evaluation, and iterative research refinement',
         tools: [this.searchTool],
-        llmConfig: llmConfig
+        llmConfig: agentLlmConfig
       });
 
       logger.info('SearchAgent initialized successfully');

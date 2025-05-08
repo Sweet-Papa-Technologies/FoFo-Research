@@ -371,13 +371,13 @@ research:
 models:
   primary:
     provider: "anthropic"
-    model: "claude-3.7-sonnet"
+    model: "gemma-3-27b-it-abliterated"
     temperature: 0.3
     top_p: 0.95
     max_tokens: 4000
   
   fallback:
-    provider: "local"
+    provider: "openai"
     model: "gemma3-27b"
     temperature: 0.5
     top_p: 0.9

@@ -47,8 +47,7 @@ export const useResearchStore = defineStore('research', {
       this.error = null;
       
       try {
-        // This would be a real API call in production
-        const response = await api.get('/api/research');
+        const response = await api.get('/research');
         const jobs = response.data.data.jobs;
         
         this.activeJobs = jobs.filter((job: ResearchJob) => 
@@ -71,8 +70,7 @@ export const useResearchStore = defineStore('research', {
       this.error = null;
       
       try {
-        // This would be a real API call in production
-        const response = await api.get(`/api/research/${id}`);
+        const response = await api.get(`/research/${id}`);
         const job = response.data.data.job;
         
         // Update or add the job to the appropriate list
@@ -108,8 +106,7 @@ export const useResearchStore = defineStore('research', {
       this.error = null;
       
       try {
-        // This would be a real API call in production
-        const response = await api.post('/api/research', { topic, ...config });
+        const response = await api.post('/research', { topic, ...config });
         const jobId = response.data.data.jobId;
         
         // Fetch the created job to get full details
@@ -130,18 +127,10 @@ export const useResearchStore = defineStore('research', {
       this.error = null;
       
       try {
-        // This would be a real API call in production
-        await api.put(`/api/research/${id}`, { action: 'pause' });
+        await api.put(`/research/${id}`, { action: 'pause' });
         
-        // Update job status locally
-        const jobIndex = this.activeJobs.findIndex(job => job.id === id);
-        if (jobIndex >= 0) {
-          this.activeJobs[jobIndex].status = JobStatus.PAUSED;
-        }
-        
-        if (this.currentJob?.id === id) {
-          this.currentJob.status = JobStatus.PAUSED;
-        }
+        // Fetch updated job to get current state from server
+        await this.fetchJobById(id);
         
         return true;
       } catch (error) {
@@ -158,18 +147,10 @@ export const useResearchStore = defineStore('research', {
       this.error = null;
       
       try {
-        // This would be a real API call in production
-        await api.put(`/api/research/${id}`, { action: 'resume' });
+        await api.put(`/research/${id}`, { action: 'resume' });
         
-        // Update job status locally
-        const jobIndex = this.activeJobs.findIndex(job => job.id === id);
-        if (jobIndex >= 0) {
-          this.activeJobs[jobIndex].status = JobStatus.RUNNING;
-        }
-        
-        if (this.currentJob?.id === id) {
-          this.currentJob.status = JobStatus.RUNNING;
-        }
+        // Fetch updated job to get current state from server
+        await this.fetchJobById(id);
         
         return true;
       } catch (error) {
@@ -181,115 +162,24 @@ export const useResearchStore = defineStore('research', {
       }
     },
     
-    // Mock implementation for development without backend
-    async _mockFetchJobs() {
+    async cancelJob(id: string) {
       this.loading = true;
+      this.error = null;
       
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const now = new Date();
-      const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
-      
-      this.activeJobs = [
-        {
-          id: '1',
-          topic: 'Artificial Intelligence Ethics',
-          status: JobStatus.RUNNING,
-          config: {
-            maxIterations: 5,
-            maxParallelSearches: 10,
-            followLinks: true,
-            maxLinksPerPage: 3,
-            informationGainThreshold: 0.2
-          },
-          search: {
-            engine: 'duckduckgo',
-            resultsPerQuery: 8
-          },
-          models: {
-            primary: {
-              provider: 'anthropic',
-              model: 'claude-3.7-sonnet',
-              temperature: 0.3
-            }
-          },
-          progress: {
-            currentIteration: 2,
-            processedUrls: 12,
-            totalUrls: 30
-          },
-          createdAt: yesterday,
-          updatedAt: now
-        },
-        {
-          id: '2',
-          topic: 'Quantum Computing',
-          status: JobStatus.PENDING,
-          config: {
-            maxIterations: 3,
-            maxParallelSearches: 5,
-            followLinks: true,
-            maxLinksPerPage: 2,
-            informationGainThreshold: 0.3
-          },
-          search: {
-            engine: 'duckduckgo',
-            resultsPerQuery: 6
-          },
-          models: {
-            primary: {
-              provider: 'openai',
-              model: 'gpt-4o',
-              temperature: 0.2
-            }
-          },
-          progress: {
-            currentIteration: 0,
-            processedUrls: 0,
-            totalUrls: 0
-          },
-          createdAt: now,
-          updatedAt: now
-        }
-      ];
-      
-      this.completedJobs = [
-        {
-          id: '3',
-          topic: 'Climate Change',
-          status: JobStatus.COMPLETED,
-          config: {
-            maxIterations: 5,
-            maxParallelSearches: 10,
-            followLinks: true,
-            maxLinksPerPage: 3,
-            informationGainThreshold: 0.2
-          },
-          search: {
-            engine: 'duckduckgo',
-            resultsPerQuery: 8
-          },
-          models: {
-            primary: {
-              provider: 'anthropic',
-              model: 'claude-3.7-sonnet',
-              temperature: 0.3
-            }
-          },
-          progress: {
-            currentIteration: 5,
-            processedUrls: 40,
-            totalUrls: 40
-          },
-          createdAt: yesterday,
-          updatedAt: yesterday,
-          completedAt: yesterday,
-          reportId: '101'
-        }
-      ];
-      
-      this.loading = false;
+      try {
+        await api.put(`/research/${id}`, { action: 'cancel' });
+        
+        // Fetch updated job to get current state from server
+        await this.fetchJobById(id);
+        
+        return true;
+      } catch (error) {
+        this.error = `Failed to cancel research job ${id}`;
+        console.error(`Error cancelling job ${id}:`, error);
+        return false;
+      } finally {
+        this.loading = false;
+      }
     }
   }
 });

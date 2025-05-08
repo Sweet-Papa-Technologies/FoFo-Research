@@ -38,14 +38,24 @@ export class ContentAgent {
         }
       ];
 
-      // Initialize the agent with the tools
+      // Create a custom llmConfig with the provided model parameters if available
+      const agentLlmConfig = {
+        provider: config?.provider || llmConfig.provider,
+        model: config?.model || llmConfig.model,
+        apiKey: llmConfig.apiKey,
+        apiBaseUrl: llmConfig.apiBaseUrl
+      };
+      
+      logger.info(`ContentAgent initializing with model: ${agentLlmConfig.model}, provider: ${agentLlmConfig.provider}`);
+      
+      // Initialize the agent with the tools and custom llmConfig
       this.agent = new Agent({
         name: 'Visioneer',
         role: 'Content Analyst',
         goal: 'Extract and analyze information from web content screenshots, evaluate credibility, and identify key insights',
         background: 'Expert in visual content analysis, information extraction, and source evaluation',
         tools: toolsForAgent as any,
-        llmConfig: llmConfig
+        llmConfig: agentLlmConfig
       });
 
       logger.info('ContentAgent initialized successfully');

@@ -38,14 +38,24 @@ export class SummaryAgent {
         }
       ];
 
-      // Initialize the agent with the tools
+      // Create a custom llmConfig with the provided model parameters if available
+      const agentLlmConfig = {
+        provider: config?.provider || llmConfig.provider,
+        model: config?.model || llmConfig.model,
+        apiKey: llmConfig.apiKey,
+        apiBaseUrl: llmConfig.apiBaseUrl
+      };
+      
+      logger.info(`SummaryAgent initializing with model: ${agentLlmConfig.model}, provider: ${agentLlmConfig.provider}`);
+      
+      // Initialize the agent with the tools and custom llmConfig
       this.agent = new Agent({
         name: 'Synthesizer',
         role: 'Research Synthesizer',
         goal: 'Synthesize information from multiple sources into coherent, structured reports',
         background: 'Expert in information synthesis, knowledge distillation, and clear communication',
         tools: toolsForAgent as any,
-        llmConfig: llmConfig
+        llmConfig: agentLlmConfig
       });
 
       logger.info('SummaryAgent initialized successfully');

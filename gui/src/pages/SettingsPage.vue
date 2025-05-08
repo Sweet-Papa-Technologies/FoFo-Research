@@ -5,13 +5,13 @@
         <q-icon name="settings" class="q-mr-sm" size="md" />
         Settings
       </div>
-      
+
       <!-- Loading state -->
       <div v-if="loading" class="flex flex-center q-pa-xl">
         <q-spinner color="primary" size="3em" />
         <div class="text-subtitle1 q-ml-md">Loading settings...</div>
       </div>
-      
+
       <!-- Settings content -->
       <template v-else>
         <q-card dark bordered class="card-dark q-mb-lg">
@@ -29,21 +29,21 @@
             <q-tab name="search" icon="search" label="Search" />
             <q-tab name="system" icon="memory" label="System" />
           </q-tabs>
-          
+
           <q-separator dark />
-          
+
           <q-tab-panels v-model="activeTab" animated class="bg-dark">
             <!-- General Settings -->
             <q-tab-panel name="general">
               <div class="text-h6 q-mb-md">General Settings</div>
-              
+
               <div class="row q-col-gutter-md">
                 <div class="col-12 col-md-6">
                   <q-card dark flat bordered class="bg-dark-page">
                     <q-card-section>
                       <div class="text-subtitle1">Research Configuration</div>
                       <q-separator dark class="q-my-md" />
-                      
+
                       <q-list dense>
                         <q-item>
                           <q-item-section>
@@ -65,7 +65,7 @@
                             <q-badge color="primary">{{ settings.research.maxIterations }}</q-badge>
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item>
                           <q-item-section>
                             <q-item-label>Max Parallel Searches</q-item-label>
@@ -86,7 +86,7 @@
                             <q-badge color="primary">{{ settings.research.maxParallelSearches }}</q-badge>
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item tag="label">
                           <q-item-section>
                             <q-item-label>Follow Links</q-item-label>
@@ -96,7 +96,7 @@
                             <q-toggle v-model="settings.research.followLinks" color="primary" />
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item>
                           <q-item-section>
                             <q-item-label>Max Links Per Page</q-item-label>
@@ -120,7 +120,7 @@
                             </q-badge>
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item>
                           <q-item-section>
                             <q-item-label>Information Gain Threshold</q-item-label>
@@ -145,13 +145,13 @@
                     </q-card-section>
                   </q-card>
                 </div>
-                
+
                 <div class="col-12 col-md-6">
                   <q-card dark flat bordered class="bg-dark-page">
                     <q-card-section>
                       <div class="text-subtitle1">Report Configuration</div>
                       <q-separator dark class="q-my-md" />
-                      
+
                       <q-list dense>
                         <q-item>
                           <q-item-section>
@@ -169,7 +169,7 @@
                             />
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item tag="label">
                           <q-item-section>
                             <q-item-label>Include Sources</q-item-label>
@@ -182,7 +182,7 @@
                             />
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item tag="label">
                           <q-item-section>
                             <q-item-label>Summarize Sources</q-item-label>
@@ -196,7 +196,7 @@
                             />
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item>
                           <q-item-section>
                             <q-item-label>Max Report Length</q-item-label>
@@ -216,12 +216,12 @@
                       </q-list>
                     </q-card-section>
                   </q-card>
-                  
+
                   <q-card dark flat bordered class="bg-dark-page q-mt-md">
                     <q-card-section>
                       <div class="text-subtitle1">Interface Settings</div>
                       <q-separator dark class="q-my-md" />
-                      
+
                       <q-list dense>
                         <q-item tag="label">
                           <q-item-section>
@@ -236,7 +236,7 @@
                             />
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item>
                           <q-item-section>
                             <q-item-label>Language</q-item-label>
@@ -259,11 +259,11 @@
                 </div>
               </div>
             </q-tab-panel>
-            
+
             <!-- Model Settings -->
             <q-tab-panel name="models">
               <div class="text-h6 q-mb-md">Model Settings</div>
-              
+
               <q-tabs
                 v-model="activeModelTab"
                 dense
@@ -275,63 +275,63 @@
                 <q-tab name="fallback" label="Fallback Model" />
                 <q-tab name="vision" label="Vision Model" />
               </q-tabs>
-              
+
               <q-separator dark />
-              
+
               <q-tab-panels v-model="activeModelTab" animated class="bg-dark-page">
                 <q-tab-panel name="primary">
                   <div class="text-subtitle1 q-mb-md">Primary Model Configuration</div>
                   <model-selector v-model="settings.models.primary" />
                 </q-tab-panel>
-                
+
                 <q-tab-panel name="fallback">
                   <div class="row items-center q-mb-md">
                     <div class="text-subtitle1">Fallback Model Configuration</div>
                     <q-space />
-                    <q-toggle 
-                      v-model="useFallbackModel" 
-                      label="Use fallback model" 
-                      color="primary" 
+                    <q-toggle
+                      v-model="useFallbackModel"
+                      label="Use fallback model"
+                      color="primary"
                     />
                   </div>
-                  <model-selector 
-                    v-if="useFallbackModel" 
-                    v-model="fallbackModel" 
+                  <model-selector
+                    v-if="useFallbackModel"
+                    v-model="fallbackModel"
                     @update:model-value="updateFallbackModel"
                   />
                 </q-tab-panel>
-                
+
                 <q-tab-panel name="vision">
                   <div class="row items-center q-mb-md">
                     <div class="text-subtitle1">Vision Model Configuration</div>
                     <q-space />
-                    <q-toggle 
-                      v-model="useVisionModel" 
-                      label="Use dedicated vision model" 
-                      color="primary" 
+                    <q-toggle
+                      v-model="useVisionModel"
+                      label="Use dedicated vision model"
+                      color="primary"
                     />
                   </div>
-                  <model-selector 
-                    v-if="useVisionModel" 
-                    v-model="visionModel" 
+                  <model-selector
+                    v-if="useVisionModel"
+                    v-model="visionModel"
                     :vision-required="true"
                     @update:model-value="updateVisionModel"
                   />
                 </q-tab-panel>
               </q-tab-panels>
             </q-tab-panel>
-            
+
             <!-- Search Settings -->
             <q-tab-panel name="search">
               <div class="text-h6 q-mb-md">Search Settings</div>
-              
+
               <div class="row q-col-gutter-md">
                 <div class="col-12 col-md-6">
                   <q-card dark flat bordered class="bg-dark-page">
                     <q-card-section>
                       <div class="text-subtitle1">Search Configuration</div>
                       <q-separator dark class="q-my-md" />
-                      
+
                       <q-list dense>
                         <q-item>
                           <q-item-section>
@@ -349,7 +349,7 @@
                             />
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item>
                           <q-item-section>
                             <q-item-label>Results Per Query</q-item-label>
@@ -374,13 +374,13 @@
                     </q-card-section>
                   </q-card>
                 </div>
-                
+
                 <div class="col-12 col-md-6">
                   <q-card dark flat bordered class="bg-dark-page">
                     <q-card-section>
                       <div class="text-subtitle1">Domain Filters</div>
                       <q-separator dark class="q-my-md" />
-                      
+
                       <div class="q-mb-md">
                         <div class="text-subtitle2 q-mb-sm">Include Domains</div>
                         <q-input
@@ -400,7 +400,7 @@
                             />
                           </template>
                         </q-input>
-                        
+
                         <div class="q-gutter-xs q-mt-sm">
                           <q-chip
                             v-for="(domain, index) in settings.search.domainFilters.include"
@@ -415,7 +415,7 @@
                           </q-chip>
                         </div>
                       </div>
-                      
+
                       <div>
                         <div class="text-subtitle2 q-mb-sm">Exclude Domains</div>
                         <q-input
@@ -435,7 +435,7 @@
                             />
                           </template>
                         </q-input>
-                        
+
                         <div class="q-gutter-xs q-mt-sm">
                           <q-chip
                             v-for="(domain, index) in settings.search.domainFilters.exclude"
@@ -455,18 +455,18 @@
                 </div>
               </div>
             </q-tab-panel>
-            
+
             <!-- System Settings -->
             <q-tab-panel name="system">
               <div class="text-h6 q-mb-md">System Settings</div>
-              
+
               <div class="row q-col-gutter-md">
                 <div class="col-12 col-md-6">
                   <q-card dark flat bordered class="bg-dark-page">
                     <q-card-section>
                       <div class="text-subtitle1">System Configuration</div>
                       <q-separator dark class="q-my-md" />
-                      
+
                       <q-list dense>
                         <q-item>
                           <q-item-section>
@@ -488,7 +488,7 @@
                             <q-badge color="primary">{{ settings.system.maxConcurrentJobs }}</q-badge>
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item>
                           <q-item-section>
                             <q-item-label>Logging Level</q-item-label>
@@ -505,7 +505,7 @@
                             />
                           </q-item-section>
                         </q-item>
-                        
+
                         <q-item>
                           <q-item-section>
                             <q-item-label>Storage Directory</q-item-label>
@@ -524,13 +524,13 @@
                     </q-card-section>
                   </q-card>
                 </div>
-                
+
                 <div class="col-12 col-md-6">
                   <q-card dark flat bordered class="bg-dark-page">
                     <q-card-section>
                       <div class="text-subtitle1">Advanced Options</div>
                       <q-separator dark class="q-my-md" />
-                      
+
                       <div class="text-subtitle2 q-mb-sm">Configuration Import/Export</div>
                       <div class="row q-col-gutter-sm">
                         <div class="col-6">
@@ -552,9 +552,9 @@
                           />
                         </div>
                       </div>
-                      
+
                       <q-separator dark class="q-my-md" />
-                      
+
                       <div class="text-subtitle2 q-mb-sm">Data Management</div>
                       <q-btn
                         color="warning"
@@ -565,12 +565,12 @@
                       />
                     </q-card-section>
                   </q-card>
-                  
+
                   <q-card dark flat bordered class="bg-dark-page q-mt-md">
                     <q-card-section>
                       <div class="text-subtitle1">About</div>
                       <q-separator dark class="q-my-md" />
-                      
+
                       <div class="text-body2">
                         <div><strong>FoFo Research Tool</strong></div>
                         <div>Version: 0.1.0</div>
@@ -583,25 +583,25 @@
             </q-tab-panel>
           </q-tab-panels>
         </q-card>
-        
+
         <div class="flex justify-end q-mt-md">
-          <q-btn 
-            flat 
-            color="warning" 
-            label="Reset to Defaults" 
+          <q-btn
+            flat
+            color="warning"
+            label="Reset to Defaults"
             class="q-mr-md"
-            @click="resetSettings" 
+            @click="resetSettings"
           />
-          <q-btn 
-            color="primary" 
-            label="Save Settings" 
+          <q-btn
+            color="primary"
+            label="Save Settings"
             :loading="saving"
-            @click="saveSettings" 
+            @click="saveSettings"
           />
         </div>
       </template>
     </div>
-    
+
     <!-- Confirm dialog for clearing data -->
     <q-dialog v-model="clearDataConfirm" persistent>
       <q-card dark>
@@ -609,12 +609,12 @@
           <q-avatar icon="warning" color="warning" text-color="white" />
           <span class="q-ml-sm">Are you sure you want to clear all data?</span>
         </q-card-section>
-        
+
         <q-card-section>
           This will delete all research jobs, reports, and settings.
           This action cannot be undone.
         </q-card-section>
-        
+
         <q-card-actions align="right">
           <q-btn flat label="Cancel" color="primary" v-close-popup />
           <q-btn flat label="Delete Everything" color="negative" @click="clearAllData" v-close-popup />
@@ -650,7 +650,7 @@ const newExcludeDomain = ref('');
 const useFallbackModel = ref(false);
 const useVisionModel = ref(false);
 const fallbackModel = ref<ModelSettings>({
-  provider: 'local',
+  provider: 'openai',
   model: 'gemma3-27b',
   temperature: 0.5,
   topP: 0.9,
@@ -674,8 +674,8 @@ const settings = ref({
   },
   models: {
     primary: {
-      provider: 'anthropic',
-      model: 'claude-3.7-sonnet',
+      provider: 'openai',
+      model: 'gemma-3-27b-it-abliterated',
       temperature: 0.3,
       topP: 0.95,
       maxTokens: 4000
@@ -815,7 +815,7 @@ function resetSettings() {
     message: 'Settings reset to defaults',
     position: 'top'
   });
-  
+
   // Reload settings
   loadSettings();
 }
@@ -823,15 +823,15 @@ function resetSettings() {
 // Save settings
 async function saveSettings() {
   saving.value = true;
-  
+
   try {
     // Update models based on toggles
     settings.value.models.fallback = useFallbackModel.value ? fallbackModel.value : null;
     settings.value.models.vision = useVisionModel.value ? visionModel.value : null;
-    
+
     // In a real implementation, this would save settings to the server
     await new Promise(resolve => setTimeout(resolve, 1000));
-    
+
     $q.notify({
       type: 'positive',
       message: 'Settings saved successfully',
@@ -839,7 +839,7 @@ async function saveSettings() {
     });
   } catch (error) {
     console.error('Failed to save settings:', error);
-    
+
     $q.notify({
       type: 'negative',
       message: 'Failed to save settings',
@@ -853,23 +853,23 @@ async function saveSettings() {
 // Load settings
 async function loadSettings() {
   loading.value = true;
-  
+
   try {
     // In a real implementation, this would load settings from the server
     await configStore._mockFetchSystemConfig();
-    
-    // Set local settings from store
+
+    // Set openai settings from store
     if (configStore.systemConfig) {
       settings.value.research = { ...configStore.systemConfig.research };
       settings.value.search = { ...configStore.systemConfig.search };
       settings.value.reporting = { ...configStore.systemConfig.reporting };
       settings.value.system = { ...configStore.systemConfig.system };
-      
+
       // Set primary model
       if (configStore.systemConfig.models.primary) {
         settings.value.models.primary = { ...configStore.systemConfig.models.primary };
       }
-      
+
       // Set fallback model if exists
       if (configStore.systemConfig.models.fallback) {
         useFallbackModel.value = true;
@@ -879,7 +879,7 @@ async function loadSettings() {
         useFallbackModel.value = false;
         settings.value.models.fallback = null;
       }
-      
+
       // Set vision model if exists
       if (configStore.systemConfig.models.vision) {
         useVisionModel.value = true;
@@ -892,7 +892,7 @@ async function loadSettings() {
     }
   } catch (error) {
     console.error('Failed to load settings:', error);
-    
+
     $q.notify({
       type: 'negative',
       message: 'Failed to load settings',
@@ -906,7 +906,7 @@ async function loadSettings() {
 onMounted(async () => {
   // Load available models
   await configStore._mockFetchAvailableModels();
-  
+
   // Load settings
   await loadSettings();
 });

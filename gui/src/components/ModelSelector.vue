@@ -154,54 +154,53 @@ const modelParams = ref<{
 
 // Mock data for providers and models - this would come from the config store
 const providers = [
-  { value: 'anthropic', label: 'Anthropic' },
-  { value: 'openai', label: 'OpenAI' },
+  { value: 'openai', label: 'LM Studio' },
+  // { value: 'openai', label: 'OpenAI' },
   { value: 'google', label: 'Google' },
-  { value: 'local', label: 'Local Models' }
 ];
 
 const models = [
-  { 
-    value: 'claude-3.7-sonnet', 
-    label: 'Claude 3.7 Sonnet', 
-    provider: 'anthropic',
-    capabilities: ['text', 'vision'] 
-  },
-  { 
-    value: 'claude-3.5-sonnet', 
-    label: 'Claude 3.5 Sonnet', 
-    provider: 'anthropic',
-    capabilities: ['text', 'vision'] 
-  },
-  { 
-    value: 'gpt-4o', 
-    label: 'GPT-4o', 
+  {
+    value: 'gemma-3-27b-it-abliterated',
+    label: 'Gemma 3 27b Abliterated',
     provider: 'openai',
-    capabilities: ['text', 'vision'] 
+    capabilities: ['text', 'vision']
   },
-  { 
-    value: 'gpt-4-turbo', 
-    label: 'GPT-4 Turbo', 
+  {
+    value: 'claude-3.5-sonnet',
+    label: 'Claude 3.5 Sonnet',
+    provider: 'anthropic',
+    capabilities: ['text', 'vision']
+  },
+  {
+    value: 'gpt-4o',
+    label: 'GPT-4o',
     provider: 'openai',
-    capabilities: ['text'] 
+    capabilities: ['text', 'vision']
   },
-  { 
-    value: 'gemini-2.0-flash', 
-    label: 'Gemini 2.0 Flash', 
+  {
+    value: 'gpt-4-turbo',
+    label: 'GPT-4 Turbo',
+    provider: 'openai',
+    capabilities: ['text']
+  },
+  {
+    value: 'gemini-2.0-flash',
+    label: 'Gemini 2.0 Flash',
     provider: 'google',
-    capabilities: ['text', 'vision'] 
+    capabilities: ['text', 'vision']
   },
-  { 
-    value: 'gemma3-27b', 
-    label: 'Gemma3 27b', 
-    provider: 'local',
-    capabilities: ['text'] 
+  {
+    value: 'gemma3-27b',
+    label: 'Gemma3 27b',
+    provider: 'openai',
+    capabilities: ['text']
   },
-  { 
-    value: 'phi-4-reasoning', 
-    label: 'Phi-4 Reasoning', 
-    provider: 'local',
-    capabilities: ['text'] 
+  {
+    value: 'phi-4-reasoning',
+    label: 'Phi-4 Reasoning',
+    provider: 'openai',
+    capabilities: ['text']
   }
 ];
 
@@ -211,7 +210,7 @@ const providerOptions = computed(() => {
 
 const filteredModelOptions = computed(() => {
   if (!selectedProvider.value) return [];
-  
+
   return models
     .filter(model => model.provider === selectedProvider.value)
     .filter(model => {
@@ -231,7 +230,7 @@ watch([selectedProvider, selectedModel, modelParams], () => {
       topP: modelParams.value.topP,
       maxTokens: modelParams.value.maxTokens
     };
-    
+
     emit('update:modelValue', updatedModel);
   }
 });
@@ -250,11 +249,11 @@ onMounted(() => {
   // Load available models from config store
   // In a real implementation, we would fetch this data from the config store
   // configStore._mockFetchAvailableModels();
-  
+
   // Set initial values
   selectedProvider.value = props.modelValue.provider;
   selectedModel.value = props.modelValue.model;
-  
+
   modelParams.value = {
     temperature: props.modelValue.temperature || 0.3,
     topP: props.modelValue.topP || 0.9,

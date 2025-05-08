@@ -11,7 +11,7 @@ export class KaibanJobService {
   private orchestrator: ResearchOrchestrator;
 
   constructor() {
-    // Initialize the research orchestrator
+    // Initialize the research orchestrator with default env config
     this.orchestrator = new ResearchOrchestrator();
     
     logger.info('KaibanJobService initialized successfully');
@@ -23,6 +23,13 @@ export class KaibanJobService {
   public async processJob(job: ResearchJob): Promise<void> {
     try {
       logger.info(`Processing job ${job.id} with KaibanJS: ${job.topic}`);
+      
+      // Create a new orchestrator instance for each job with the specific model config
+      const jobOrchestrator = new ResearchOrchestrator({
+        provider: job.models.primary.provider,
+        model: job.models.primary.model,
+        apiKey: process.env.LLM_API_KEY // Use environment variable for API key
+      });
       
       // Convert the job configuration to KaibanJS inputs
       const kaibanInputs = {
@@ -38,8 +45,10 @@ export class KaibanJobService {
         }
       };
       
-      // Execute the research workflow
-      const result = await this.orchestrator.executeResearch(kaibanInputs);
+      logger.info(`Using model: ${job.models.primary.model} with provider: ${job.models.primary.provider}`);
+      
+      // Execute the research workflow with the job-specific orchestrator
+      const result = await jobOrchestrator.executeResearch(kaibanInputs);
       
       if (result.status === 'SUCCESS') {
         logger.info(`Job ${job.id} completed successfully with KaibanJS`);

@@ -17,14 +17,24 @@ export class ResearchDirectorAgent {
     provider?: string;
   }) {
     try {
-      // Initialize the agent with the tools
+      // Create a custom llmConfig with the provided model parameters if available
+      const agentLlmConfig = {
+        provider: config?.provider || llmConfig.provider,
+        model: config?.model || llmConfig.model,
+        apiKey: llmConfig.apiKey,
+        apiBaseUrl: llmConfig.apiBaseUrl
+      };
+      
+      logger.info(`ResearchDirectorAgent initializing with model: ${agentLlmConfig.model}, provider: ${agentLlmConfig.provider}`);
+      
+      // Initialize the agent with custom llmConfig
       this.agent = new Agent({
         name: 'Director',
         role: 'Research Director',
         goal: 'Orchestrate the research process, ensure comprehensive coverage, and maintain focus on the research question',
         background: 'Expert in research methodology, project management, and knowledge gap analysis',
         tools: [], // Director doesn't need tools as it orchestrates other agents
-        llmConfig: llmConfig
+        llmConfig: agentLlmConfig
       });
 
       logger.info('ResearchDirectorAgent initialized successfully');

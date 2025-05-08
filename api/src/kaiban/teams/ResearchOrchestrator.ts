@@ -19,10 +19,17 @@ export class ResearchOrchestrator {
     provider?: string;
     apiKey?: string;
   }) {
-    this.researchTeam = new ResearchTeam(config);
-    this.synthesisTeam = new SynthesisTeam(config);
+    // Use environment variables as defaults if no config provided
+    const modelConfig = {
+      model: config?.model || process.env.LLM_MODEL,
+      provider: config?.provider || process.env.LLM_PROVIDER,
+      apiKey: config?.apiKey || process.env.LLM_API_KEY
+    };
     
-    logger.info('ResearchOrchestrator initialized successfully');
+    this.researchTeam = new ResearchTeam(modelConfig);
+    this.synthesisTeam = new SynthesisTeam(modelConfig);
+    
+    logger.info(`ResearchOrchestrator initialized with model: ${modelConfig.model}, provider: ${modelConfig.provider}`);
   }
 
   /**

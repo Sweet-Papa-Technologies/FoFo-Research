@@ -18,18 +18,18 @@ const getAvailableModels = async (req, res, next) => {
         // For now, return mock data
         const providers = [
             {
-                id: 'anthropic',
-                name: 'Anthropic',
+                id: 'openai',
+                name: 'LM Studio',
                 models: [
                     {
-                        id: 'claude-3.7-sonnet',
-                        provider: 'anthropic',
-                        name: 'Claude 3.7 Sonnet',
+                        id: 'gemma-3-27b-it-abliterated',
+                        provider: 'openai',
+                        name: 'Gemma 3.27b',
                         capabilities: ['text', 'vision'],
                         defaultParameters: {
                             temperature: 0.3,
                             topP: 0.95,
-                            maxTokens: 4000
+                            maxTokens: 12000
                         }
                     }
                 ]
@@ -52,28 +52,28 @@ const getAvailableModels = async (req, res, next) => {
             },
             {
                 id: 'local',
-                name: 'Local Models',
+                name: 'LM Studio',
                 models: [
                     {
-                        id: 'gemma3-27b',
-                        provider: 'local',
+                        id: 'gemma-3-27b-it-abliterated',
+                        provider: 'openai',
                         name: 'Gemma3 27b',
-                        capabilities: ['text'],
+                        capabilities: ['text', 'vision'],
                         defaultParameters: {
                             temperature: 0.5,
                             topP: 0.9,
-                            maxTokens: 2000
+                            maxTokens: 12000
                         }
                     },
                     {
                         id: 'phi-4-reasoning',
-                        provider: 'local',
+                        provider: 'openai',
                         name: 'Phi-4 Reasoning',
-                        capabilities: ['text'],
+                        capabilities: ['text', 'vision'],
                         defaultParameters: {
                             temperature: 0.4,
                             topP: 0.9,
-                            maxTokens: 2000
+                            maxTokens: 12000
                         }
                     }
                 ]
@@ -108,24 +108,25 @@ const getSystemConfig = async (req, res, next) => {
             },
             models: {
                 primary: {
-                    provider: 'anthropic',
-                    model: 'claude-3.7-sonnet',
+                    provider: 'openai',
+                    model: 'gemma-3-27b-it-abliterated',
                     temperature: 0.3,
                     topP: 0.95,
-                    maxTokens: 4000
+                    maxTokens: 12000
                 },
                 fallback: {
-                    provider: 'local',
-                    model: 'gemma3-27b',
-                    temperature: 0.5,
-                    topP: 0.9,
-                    maxTokens: 2000
+                    provider: 'openai',
+                    model: 'gemma-3-27b-it-abliterated',
+                    temperature: 0.3,
+                    topP: 0.95,
+                    maxTokens: 12000
                 },
                 vision: {
                     provider: 'openai',
-                    model: 'gpt-4o',
-                    temperature: 0.2,
-                    maxTokens: 1000
+                    model: 'gemma-3-27b-it-abliterated',
+                    temperature: 0.3,
+                    topP: 0.95,
+                    maxTokens: 12000
                 }
             },
             search: {

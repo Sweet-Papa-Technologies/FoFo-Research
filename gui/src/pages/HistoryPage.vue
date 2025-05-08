@@ -190,8 +190,22 @@
               <!-- No data -->
               <template v-slot:no-data>
                 <div class="full-width text-center q-pa-lg">
-                  <q-icon name="search_off" size="2rem" color="grey-7" />
-                  <div class="text-subtitle1 q-mt-sm">No matching jobs found</div>
+                  <div v-if="researchStore.error">
+                    <q-icon name="error" size="2rem" color="negative" />
+                    <div class="text-subtitle1 q-mt-sm">Error loading jobs: {{ researchStore.error }}</div>
+                    <q-btn 
+                      color="primary" 
+                      label="Retry" 
+                      icon="refresh" 
+                      class="q-mt-sm"
+                      @click="loadJobs" 
+                      :loading="loading"
+                    />
+                  </div>
+                  <div v-else>
+                    <q-icon name="search_off" size="2rem" color="grey-7" />
+                    <div class="text-subtitle1 q-mt-sm">No matching jobs found</div>
+                  </div>
                 </div>
               </template>
             </q-table>
@@ -199,7 +213,7 @@
         </div>
         
         <!-- Empty state -->
-        <div v-else class="text-center q-mt-xl">
+        <div v-else-if="!researchStore.error" class="text-center q-mt-xl">
           <q-icon name="history" color="grey-7" size="4rem" />
           <p class="text-h6 q-mt-md">No research history</p>
           <p class="text-body1">
@@ -211,6 +225,21 @@
             icon="science" 
             class="q-mt-md"
             @click="$router.push('/research/new')"
+          />
+        </div>
+        
+        <!-- Error state -->
+        <div v-else class="text-center q-mt-xl">
+          <q-icon name="error" color="negative" size="4rem" />
+          <p class="text-h6 q-mt-md">Error Loading Research Jobs</p>
+          <p class="text-body1">{{ researchStore.error }}</p>
+          <q-btn 
+            color="primary" 
+            label="Retry" 
+            icon="refresh" 
+            class="q-mt-md"
+            @click="loadJobs" 
+            :loading="loading"
           />
         </div>
       </template>
@@ -707,37 +736,82 @@ function getProgressColor(job: ResearchJob): string {
 }
 
 // Pause a running job
-function pauseJob(jobId: string) {
-  // In development mode, this will not actually pause the job
-  $q.notify({
-    type: 'info',
-    message: `Job ${jobId} paused`,
-    position: 'top'
-  });
+async function pauseJob(jobId: string) {
+  try {
+    const success = await researchStore.pauseJob(jobId);
+    
+    if (success) {
+      $q.notify({
+        type: 'info',
+        message: `Job ${jobId} paused`,
+        position: 'top'
+      });
+    } else {
+      throw new Error('Failed to pause job');
+    }
+  } catch (error) {
+    console.error(`Failed to pause job ${jobId}:`, error);
+    
+    $q.notify({
+      type: 'negative',
+      message: `Failed to pause job ${jobId}`,
+      position: 'top'
+    });
+  }
 }
 
 // Resume a paused job
-function resumeJob(jobId: string) {
-  // In development mode, this will not actually resume the job
-  $q.notify({
-    type: 'info',
-    message: `Job ${jobId} resumed`,
-    position: 'top'
-  });
+async function resumeJob(jobId: string) {
+  try {
+    const success = await researchStore.resumeJob(jobId);
+    
+    if (success) {
+      $q.notify({
+        type: 'info',
+        message: `Job ${jobId} resumed`,
+        position: 'top'
+      });
+    } else {
+      throw new Error('Failed to resume job');
+    }
+  } catch (error) {
+    console.error(`Failed to resume job ${jobId}:`, error);
+    
+    $q.notify({
+      type: 'negative',
+      message: `Failed to resume job ${jobId}`,
+      position: 'top'
+    });
+  }
 }
 
 // Cancel a job
-function cancelJob(jobId: string) {
-  // In development mode, this will not actually cancel the job
-  $q.notify({
-    type: 'warning',
-    message: `Job ${jobId} cancelled`,
-    position: 'top'
-  });
-  
-  // Close the details dialog if open
-  if (jobDetailsOpen.value && selectedJob.value?.id === jobId) {
-    jobDetailsOpen.value = false;
+async function cancelJob(jobId: string) {
+  try {
+    const success = await researchStore.cancelJob(jobId);
+    
+    if (success) {
+      $q.notify({
+        type: 'warning',
+        message: `Job ${jobId} cancelled`,
+        position: 'top'
+      });
+      
+      // Close the details dialog if open
+      if (jobDetailsOpen.value && selectedJob.value?.id === jobId) {
+        jobDetailsOpen.value = false;
+      }
+    } else {
+      throw new Error('Failed to cancel job');
+    }
+  } catch (error) {
+    console.error(`Failed to cancel job ${jobId}:`, error);
+    
+    $q.notify({
+      type: 'negative',
+      message: `Failed to cancel job ${jobId}`,
+      position: 'top'
+    });
   }
 }
 
@@ -764,12 +838,13 @@ function viewReport(reportId?: string) {
   }
 }
 
-onMounted(async () => {
+// Function to load jobs (used in mounted and retry button)
+async function loadJobs() {
   loading.value = true;
   
   try {
-    // Load jobs from store
-    await researchStore._mockFetchJobs();
+    // Load jobs from store using real API
+    await researchStore.fetchJobs();
   } catch (error) {
     console.error('Failed to load jobs:', error);
     
@@ -781,6 +856,10 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+}
+
+onMounted(async () => {
+  await loadJobs();
 });
 </script>
 

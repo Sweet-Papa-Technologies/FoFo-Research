@@ -25,9 +25,9 @@ exports.DEFAULT_SEARCH_SETTINGS = {
     }
 };
 exports.DEFAULT_MODEL_SETTINGS = {
-    provider: 'anthropic',
-    model: 'claude-3.7-sonnet',
+    provider: 'openai',
+    model: 'gemma-3-27b-it-abliterated',
     temperature: 0.3,
     topP: 0.95,
-    maxTokens: 4000
+    maxTokens: 12000
 };

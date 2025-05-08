@@ -38,10 +38,23 @@
         />
       </div>
       
-      <div v-else-if="!loading && activeTabJobs" class="text-center q-mt-xl">
+      <div v-else-if="!loading && activeTabJobs && !researchStore.error" class="text-center q-mt-xl">
         <q-icon name="check_circle" color="positive" size="4rem" />
         <p class="text-h6 q-mt-md">No active research jobs</p>
         <p class="text-body1">Start a new research job above to get started.</p>
+      </div>
+      
+      <div v-else-if="!loading && researchStore.error" class="text-center q-mt-xl">
+        <q-icon name="error" color="negative" size="4rem" />
+        <p class="text-h6 q-mt-md">Error Loading Research Jobs</p>
+        <p class="text-body1">{{ researchStore.error }}</p>
+        <q-btn 
+          color="primary" 
+          label="Retry" 
+          icon="refresh" 
+          class="q-mt-md"
+          @click="loadJobs" 
+        />
       </div>
     </div>
     
@@ -442,17 +455,20 @@ async function startResearch(formData: any) {
   loading.value = true;
   
   try {
-    // In development mode, use mock data
-    // In production, this would call the actual API
-    await researchStore._mockFetchJobs();
+    const jobId = await researchStore.createJob(formData.topic, formData);
     
-    $q.notify({
-      type: 'positive',
-      message: 'Research job created successfully',
-      position: 'top'
-    });
-    
-    // Clear form or take other actions
+    if (jobId) {
+      $q.notify({
+        type: 'positive',
+        message: 'Research job created successfully',
+        position: 'top'
+      });
+      
+      // Fetch all jobs to update the list
+      await researchStore.fetchJobs();
+    } else {
+      throw new Error('Failed to create job');
+    }
   } catch (error) {
     console.error('Failed to create research job:', error);
     
@@ -467,37 +483,82 @@ async function startResearch(formData: any) {
 }
 
 // Pause a running job
-function pauseJob(jobId: string) {
-  // In development mode, this will not actually pause the job
-  $q.notify({
-    type: 'info',
-    message: `Job ${jobId} paused`,
-    position: 'top'
-  });
+async function pauseJob(jobId: string) {
+  try {
+    const success = await researchStore.pauseJob(jobId);
+    
+    if (success) {
+      $q.notify({
+        type: 'info',
+        message: `Job ${jobId} paused`,
+        position: 'top'
+      });
+    } else {
+      throw new Error('Failed to pause job');
+    }
+  } catch (error) {
+    console.error(`Failed to pause job ${jobId}:`, error);
+    
+    $q.notify({
+      type: 'negative',
+      message: `Failed to pause job ${jobId}`,
+      position: 'top'
+    });
+  }
 }
 
 // Resume a paused job
-function resumeJob(jobId: string) {
-  // In development mode, this will not actually resume the job
-  $q.notify({
-    type: 'info',
-    message: `Job ${jobId} resumed`,
-    position: 'top'
-  });
+async function resumeJob(jobId: string) {
+  try {
+    const success = await researchStore.resumeJob(jobId);
+    
+    if (success) {
+      $q.notify({
+        type: 'info',
+        message: `Job ${jobId} resumed`,
+        position: 'top'
+      });
+    } else {
+      throw new Error('Failed to resume job');
+    }
+  } catch (error) {
+    console.error(`Failed to resume job ${jobId}:`, error);
+    
+    $q.notify({
+      type: 'negative',
+      message: `Failed to resume job ${jobId}`,
+      position: 'top'
+    });
+  }
 }
 
 // Cancel a job
-function cancelJob(jobId: string) {
-  // In development mode, this will not actually cancel the job
-  $q.notify({
-    type: 'warning',
-    message: `Job ${jobId} cancelled`,
-    position: 'top'
-  });
-  
-  // Close the details dialog if open
-  if (jobDetailsOpen.value && selectedJob.value?.id === jobId) {
-    jobDetailsOpen.value = false;
+async function cancelJob(jobId: string) {
+  try {
+    const success = await researchStore.cancelJob(jobId);
+    
+    if (success) {
+      $q.notify({
+        type: 'warning',
+        message: `Job ${jobId} cancelled`,
+        position: 'top'
+      });
+      
+      // Close the details dialog if open
+      if (jobDetailsOpen.value && selectedJob.value?.id === jobId) {
+        jobDetailsOpen.value = false;
+      }
+    } else {
+      throw new Error('Failed to cancel job');
+    }
+  } catch (error) {
+    console.error(`Failed to cancel job ${jobId}:`, error);
+    
+    $q.notify({
+      type: 'negative',
+      message: `Failed to cancel job ${jobId}`,
+      position: 'top'
+    });
   }
 }
 
@@ -524,12 +585,13 @@ function viewReport(reportId?: string) {
   }
 }
 
-onMounted(async () => {
+// Function to load jobs (used in mounted and retry button)
+async function loadJobs() {
   loading.value = true;
   
   try {
-    // Load jobs from store
-    await researchStore._mockFetchJobs();
+    // Load jobs from store using real API
+    await researchStore.fetchJobs();
   } catch (error) {
     console.error('Failed to load jobs:', error);
     
@@ -541,6 +603,10 @@ onMounted(async () => {
   } finally {
     loading.value = false;
   }
+}
+
+onMounted(async () => {
+  await loadJobs();
 });
 </script>
 

@@ -1,23 +1,15 @@
 providers:
-  - id: "anthropic"
-    name: "Anthropic"
+  - id: "openai"
+    name: "LM Studio"
     models:
-      - id: "claude-3.7-sonnet"
-        name: "Claude 3.7 Sonnet"
+      - id: "gemma-3-27b-it-abliterated"
+        name: "Gemma3 27b"
         capabilities: ["text", "vision"]
         defaultParameters:
           temperature: 0.3
           top_p: 0.95
-          max_tokens: 4000
-      
-      - id: "claude-3.5-sonnet"
-        name: "Claude 3.5 Sonnet"
-        capabilities: ["text", "vision"]
-        defaultParameters:
-          temperature: 0.3
-          top_p: 0.95
-          max_tokens: 4000
-
+          max_tokens: 12000
+  
   - id: "openai"
     name: "OpenAI"
     models:
@@ -45,8 +37,8 @@ providers:
           temperature: 0.4
           max_tokens: 2000
 
-  - id: "local"
-    name: "Local Models"
+  - id: "openai"
+    name: "LM Studio"
     models:
       - id: "gemma3-27b"
         name: "Gemma3 27b"
@@ -63,3 +55,11 @@ providers:
           temperature: 0.4
           top_p: 0.9
           max_tokens: 2000
+          
+      - id: "gemma-3-27b-it-abliterated"
+        name: "Gemma 3 27b Abliterated"
+        capabilities: ["text", "vision"]
+        defaultParameters:
+          temperature: 0.3
+          top_p: 0.95
+          max_tokens: 12000

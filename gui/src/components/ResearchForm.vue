@@ -32,7 +32,7 @@
                   <q-card-section>
                     <div class="text-h6">Research Configuration</div>
                     <q-separator dark class="q-my-md" />
-                    
+
                     <q-item dense>
                       <q-item-section>
                         <q-item-label>Max Iterations</q-item-label>
@@ -187,7 +187,7 @@
                               </q-input>
                             </q-item-section>
                           </q-item>
-                          
+
                           <q-item>
                             <q-item-section>
                               <div class="q-gutter-xs q-mt-sm">
@@ -284,30 +284,30 @@
 
                       <q-tab-panel name="fallback">
                         <div class="row items-center q-mb-md">
-                          <q-toggle 
-                            v-model="useFallbackModel" 
-                            label="Use fallback model" 
-                            color="primary" 
+                          <q-toggle
+                            v-model="useFallbackModel"
+                            label="Use fallback model"
+                            color="primary"
                           />
                         </div>
-                        <model-selector 
-                          v-if="useFallbackModel" 
-                          v-model="fallbackModel" 
+                        <model-selector
+                          v-if="useFallbackModel"
+                          v-model="fallbackModel"
                           @update:model-value="updateFallbackModel"
                         />
                       </q-tab-panel>
 
                       <q-tab-panel name="vision">
                         <div class="row items-center q-mb-md">
-                          <q-toggle 
-                            v-model="useVisionModel" 
-                            label="Use dedicated vision model for screenshots" 
-                            color="primary" 
+                          <q-toggle
+                            v-model="useVisionModel"
+                            label="Use dedicated vision model for screenshots"
+                            color="primary"
                           />
                         </div>
-                        <model-selector 
-                          v-if="useVisionModel" 
-                          v-model="visionModel" 
+                        <model-selector
+                          v-if="useVisionModel"
+                          v-model="visionModel"
                           :vision-required="true"
                           @update:model-value="updateVisionModel"
                         />
@@ -337,7 +337,12 @@
         label="Start Research"
         color="primary"
         icon="science"
-      />
+      >
+        <template v-slot:loading>
+          <q-spinner-dots />
+          <span class="q-ml-sm">Submitting...</span>
+        </template>
+      </q-btn>
     </div>
   </q-form>
 </template>
@@ -383,8 +388,8 @@ const defaultSearch: SearchSettings = {
 };
 
 const defaultPrimary: ModelSettings = {
-  provider: 'anthropic',
-  model: 'claude-3.7-sonnet',
+  provider: 'openai',
+  model: 'gemma-3-27b-it-abliterated',
   temperature: 0.3,
   topP: 0.95,
   maxTokens: 4000
@@ -393,7 +398,7 @@ const defaultPrimary: ModelSettings = {
 const formData = reactive({
   topic: '',
   config: { ...defaultConfig },
-  search: { 
+  search: {
     ...defaultSearch,
     domainFilters: {
       include: [...defaultSearch.domainFilters?.include || []],
@@ -406,7 +411,7 @@ const formData = reactive({
 });
 
 const fallbackModel = ref<ModelSettings>({
-  provider: 'local',
+  provider: 'openai',
   model: 'gemma3-27b',
   temperature: 0.5,
   topP: 0.9,
@@ -464,14 +469,14 @@ function onSubmit() {
       ...(useVisionModel.value ? { vision: visionModel.value } : {})
     }
   };
-  
+
   emit('submit', finalFormData);
 }
 
 function resetForm() {
   formData.topic = '';
   formData.config = { ...defaultConfig };
-  formData.search = { 
+  formData.search = {
     ...defaultSearch,
     domainFilters: {
       include: [...defaultSearch.domainFilters?.include || []],
@@ -479,7 +484,7 @@ function resetForm() {
     }
   };
   formData.models.primary = { ...defaultPrimary };
-  
+
   useVisionModel.value = false;
   useFallbackModel.value = false;
   modelTab.value = 'primary';

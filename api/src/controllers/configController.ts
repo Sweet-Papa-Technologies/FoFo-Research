@@ -19,18 +19,18 @@ export const getAvailableModels = async (req: Request, res: Response, next: Next
     // For now, return mock data
     const providers: ProviderInfo[] = [
       {
-        id: 'anthropic',
-        name: 'Anthropic',
+        id: 'openai',
+        name: 'LM Studio',
         models: [
           {
-            id: 'claude-3.7-sonnet',
-            provider: 'anthropic',
-            name: 'Claude 3.7 Sonnet',
+            id: 'gemma-3-27b-it-abliterated',
+            provider: 'openai',
+            name: 'Gemma3 27b',
             capabilities: ['text', 'vision'],
             defaultParameters: {
               temperature: 0.3,
               topP: 0.95,
-              maxTokens: 4000
+              maxTokens: 12000
             }
           }
         ]
@@ -52,25 +52,25 @@ export const getAvailableModels = async (req: Request, res: Response, next: Next
         ]
       },
       {
-        id: 'local',
-        name: 'Local Models',
+        id: 'openai',
+        name: 'LM Studio',
         models: [
           {
-            id: 'gemma3-27b',
-            provider: 'local',
+            id: 'gemma-3-27b-it-abliterated',
+            provider: 'openai',
             name: 'Gemma3 27b',
-            capabilities: ['text'],
+            capabilities: ['text', 'vision'],
             defaultParameters: {
               temperature: 0.5,
               topP: 0.9,
-              maxTokens: 2000
+              maxTokens: 12000
             }
           },
           {
             id: 'phi-4-reasoning',
-            provider: 'local',
+            provider: 'openai',
             name: 'Phi-4 Reasoning',
-            capabilities: ['text'],
+            capabilities: ['text', 'vision'],
             defaultParameters: {
               temperature: 0.4,
               topP: 0.9,
@@ -109,14 +109,14 @@ export const getSystemConfig = async (req: Request, res: Response, next: NextFun
       },
       models: {
         primary: {
-          provider: 'anthropic',
-          model: 'claude-3.7-sonnet',
+          provider: 'openai',
+          model: 'gemma-3-27b-it-abliterated',
           temperature: 0.3,
           topP: 0.95,
-          maxTokens: 4000
+          maxTokens: 12000
         },
         fallback: {
-          provider: 'local',
+          provider: 'openai',
           model: 'gemma3-27b',
           temperature: 0.5,
           topP: 0.9,
