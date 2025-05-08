@@ -24,20 +24,6 @@ export class ContentAgent {
       this.screenshotAnalyzerTool = new ScreenshotAnalyzerTool();
       this.credibilityEvaluatorTool = new CredibilityEvaluatorTool();
 
-      // Convert tools to the format expected by KaibanJS
-      const toolsForAgent = [
-        {
-          name: this.screenshotAnalyzerTool.name,
-          description: this.screenshotAnalyzerTool.description,
-          func: async (args: any) => this.screenshotAnalyzerTool._call(args)
-        },
-        {
-          name: this.credibilityEvaluatorTool.name,
-          description: this.credibilityEvaluatorTool.description,
-          func: async (args: any) => this.credibilityEvaluatorTool._call(args)
-        }
-      ];
-
       // Create a custom llmConfig with the provided model parameters if available
       const agentLlmConfig = {
         provider: config?.provider || llmConfig.provider,
@@ -49,12 +35,16 @@ export class ContentAgent {
       logger.info(`ContentAgent initializing with model: ${agentLlmConfig.model}, provider: ${agentLlmConfig.provider}`);
       
       // Initialize the agent with the tools and custom llmConfig
+      // Pass the tool instances directly to the agent with type casting
       this.agent = new Agent({
         name: 'Visioneer',
         role: 'Content Analyst',
         goal: 'Extract and analyze information from web content screenshots, evaluate credibility, and identify key insights',
         background: 'Expert in visual content analysis, information extraction, and source evaluation',
-        tools: toolsForAgent as any,
+        tools: [
+          this.screenshotAnalyzerTool,
+          this.credibilityEvaluatorTool
+        ] as any, // Type cast as any to avoid TypeScript errors
         llmConfig: agentLlmConfig
       });
 

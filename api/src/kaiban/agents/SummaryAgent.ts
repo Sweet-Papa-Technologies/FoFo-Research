@@ -24,20 +24,6 @@ export class SummaryAgent {
       this.qualityAssessorTool = new QualityAssessorTool();
       this.reportFormatterTool = new ReportFormatterTool();
 
-      // Convert tools to the format expected by KaibanJS
-      const toolsForAgent = [
-        {
-          name: this.qualityAssessorTool.name,
-          description: this.qualityAssessorTool.description,
-          func: async (args: any) => this.qualityAssessorTool._call(args)
-        },
-        {
-          name: this.reportFormatterTool.name,
-          description: this.reportFormatterTool.description,
-          func: async (args: any) => this.reportFormatterTool._call(args)
-        }
-      ];
-
       // Create a custom llmConfig with the provided model parameters if available
       const agentLlmConfig = {
         provider: config?.provider || llmConfig.provider,
@@ -49,12 +35,16 @@ export class SummaryAgent {
       logger.info(`SummaryAgent initializing with model: ${agentLlmConfig.model}, provider: ${agentLlmConfig.provider}`);
       
       // Initialize the agent with the tools and custom llmConfig
+      // Pass the tool instances directly to the agent with type casting
       this.agent = new Agent({
         name: 'Synthesizer',
         role: 'Research Synthesizer',
         goal: 'Synthesize information from multiple sources into coherent, structured reports',
         background: 'Expert in information synthesis, knowledge distillation, and clear communication',
-        tools: toolsForAgent as any,
+        tools: [
+          this.qualityAssessorTool,
+          this.reportFormatterTool
+        ] as any, // Type cast as any to avoid TypeScript errors
         llmConfig: agentLlmConfig
       });
 

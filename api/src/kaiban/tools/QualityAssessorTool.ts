@@ -1,30 +1,28 @@
-import { ToolBase } from "./ToolBase";
+import { Tool } from "@langchain/core/tools";
+import { z } from 'zod';
 
 /**
  * Custom tool for assessing the quality and completeness of research
  * Evaluates research depth, breadth, and reliability
  */
-export class QualityAssessorTool extends ToolBase {
+export class QualityAssessorTool extends Tool {
+  static schema = z.object({
+    input: z.string().describe("JSON string containing topic, sources, keyFindings, and optional researchGoal")
+  });
+
+  name: string;
+  description: string;
+
   constructor() {
-    super(
-      "quality_assessor",
-      "Assesses the quality, depth, and completeness of research"
-    );
+    super();
+    this.name = "quality_assessor";
+    this.description = "Assesses the quality, depth, and completeness of research. Input should be a JSON string with topic, sources (array), keyFindings (array), and optional researchGoal.";
   }
 
-  async _call(input: { 
-    topic: string; 
-    sources: Array<{ 
-      url: string; 
-      title?: string; 
-      credibilityScore?: number; 
-      sourceType?: string;
-    }>; 
-    keyFindings: string[];
-    researchGoal?: string;
-  }) {
+  async _call(input: string): Promise<string> {
     try {
-      const { topic, sources, keyFindings, researchGoal } = input;
+      const parsedInput = JSON.parse(input);
+      const { topic, sources, keyFindings, researchGoal } = parsedInput;
       
       // Assess source diversity
       const sourceDiversity = this.assessSourceDiversity(sources);

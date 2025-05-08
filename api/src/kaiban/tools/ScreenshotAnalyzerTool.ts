@@ -1,21 +1,29 @@
-import { ToolBase } from "./ToolBase";
+import { Tool } from "@langchain/core/tools";
 import { captureService } from "../../services/captureService";
+import { z } from 'zod';
 
 /**
  * Custom tool for analyzing screenshots captured during research
  * Extracts text, metadata, and visual information from screenshots
  */
-export class ScreenshotAnalyzerTool extends ToolBase {
+export class ScreenshotAnalyzerTool extends Tool {
+  static schema = z.object({
+    input: z.string().describe("JSON string containing screenshotId and analysisType")
+  });
+
+  name: string;
+  description: string;
+
   constructor() {
-    super(
-      "screenshot_analyzer",
-      "Analyzes a screenshot to extract text, metadata, and visual information"
-    );
+    super();
+    this.name = "screenshot_analyzer";
+    this.description = "Analyzes a screenshot to extract text, metadata, and visual information. Input should be a JSON string with screenshotId and analysisType (full, text_only, metadata_only, or visual_elements).";
   }
 
-  async _call(input: { screenshotId: string; analysisType: "full" | "text_only" | "metadata_only" | "visual_elements" }) {
+  async _call(input: string): Promise<string> {
     try {
-      const { screenshotId, analysisType } = input;
+      const parsedInput = JSON.parse(input);
+      const { screenshotId, analysisType } = parsedInput;
       
       // Retrieve the screenshot using the capture service
       const screenshotData = await captureService.getScreenshot(screenshotId);

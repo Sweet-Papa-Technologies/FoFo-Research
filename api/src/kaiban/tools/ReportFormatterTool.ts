@@ -1,44 +1,28 @@
-import { ToolBase } from "./ToolBase";
+import { Tool } from "@langchain/core/tools";
+import { z } from 'zod';
 
 /**
  * Custom tool for formatting research reports
  * Converts research findings into structured reports with various template options
  */
-export class ReportFormatterTool extends ToolBase {
+export class ReportFormatterTool extends Tool {
+  static schema = z.object({
+    input: z.string().describe("JSON string containing title, sections, optional sources, and optional formatOptions")
+  });
+
+  name: string;
+  description: string;
+
   constructor() {
-    super(
-      "report_formatter",
-      "Formats research findings into structured reports with template options"
-    );
+    super();
+    this.name = "report_formatter";
+    this.description = "Formats research findings into structured reports with template options. Input should be a JSON string with title, sections (array), optional sources (array), and optional formatOptions object.";
   }
 
-  async _call(input: { 
-    title: string; 
-    sections: Array<{
-      heading: string;
-      content: string;
-      subsections?: Array<{
-        heading?: string;
-        content: string;
-      }>;
-    }>;
-    sources?: Array<{
-      title?: string;
-      url: string;
-      author?: string;
-      publishDate?: string;
-      credibilityScore?: number;
-    }>;
-    formatOptions?: {
-      template?: "academic" | "business" | "summary" | "detailed" | "web";
-      includeTableOfContents?: boolean;
-      includeCoverPage?: boolean;
-      includeExecutiveSummary?: boolean;
-      format?: "markdown" | "html" | "json";
-    };
-  }) {
+  async _call(input: string): Promise<string> {
     try {
-      const { title, sections, sources = [], formatOptions = {} } = input;
+      const parsedInput = JSON.parse(input);
+      const { title, sections, sources = [], formatOptions = {} } = parsedInput;
       
       // Set default format options
       const options = {

@@ -1,20 +1,28 @@
-import { ToolBase } from "./ToolBase";
+import { Tool } from "@langchain/core/tools";
+import { z } from 'zod';
 
 /**
  * Custom tool for evaluating the credibility of sources
  * Assesses reliability, reputation, and quality of research sources
  */
-export class CredibilityEvaluatorTool extends ToolBase {
+export class CredibilityEvaluatorTool extends Tool {
+  static schema = z.object({
+    input: z.string().describe("JSON string containing url, optional content, and optional metadata")
+  });
+
+  name: string;
+  description: string;
+
   constructor() {
-    super(
-      "credibility_evaluator",
-      "Evaluates the credibility of research sources based on various factors"
-    );
+    super();
+    this.name = "credibility_evaluator";
+    this.description = "Evaluates the credibility of research sources based on various factors. Input should be a JSON string with url (required), content (optional), and metadata (optional).";
   }
 
-  async _call(input: { url: string; content?: string; metadata?: Record<string, any> }) {
+  async _call(input: string): Promise<string> {
     try {
-      const { url, content, metadata } = input;
+      const parsedInput = JSON.parse(input);
+      const { url, content, metadata } = parsedInput;
       
       // Domain credibility factors
       const credibilityFactors = this.analyzeDomainCredibility(url);
