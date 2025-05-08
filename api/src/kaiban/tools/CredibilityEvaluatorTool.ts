@@ -1,85 +1,79 @@
-import { Tool } from "@langchain/core/tools";
-import { z } from 'zod';
+import { DynamicTool } from "@langchain/core/tools";
+import { logger } from "../../utils/logger";
 
 /**
  * Custom tool for evaluating the credibility of sources
  * Assesses reliability, reputation, and quality of research sources
  */
-export class CredibilityEvaluatorTool extends Tool {
-  static schema = z.object({
-    input: z.string().describe("JSON string containing url, optional content, and optional metadata")
-  });
-
-  name: string;
-  description: string;
-
+export class CredibilityEvaluatorTool extends DynamicTool {
   constructor() {
-    super();
-    this.name = "credibility_evaluator";
-    this.description = "Evaluates the credibility of research sources based on various factors. Input should be a JSON string with url (required), content (optional), and metadata (optional).";
-  }
-
-  async _call(input: string): Promise<string> {
-    try {
-      // Handle undefined or empty input
-      if (!input || input === "undefined") {
-        return JSON.stringify({
-          error: "Invalid input",
-          message: "Input must be a valid JSON string containing url and optional content/metadata"
-        });
+    super({
+      name: "credibility_evaluator",
+      description: "Evaluates the credibility of research sources based on various factors. Input should be a JSON string with url (required), content (optional), and metadata (optional).",
+      func: async (input: string): Promise<string> => {
+        try {
+          // Handle undefined or empty input
+          if (!input || input === "undefined") {
+            logger.error("CredibilityEvaluatorTool received undefined or empty input");
+            return JSON.stringify({
+              error: "Invalid input",
+              message: "Input must be a valid JSON string containing url and optional content/metadata"
+            });
+          }
+          
+          const parsedInput = JSON.parse(input);
+          const { url, content, metadata } = parsedInput;
+          
+          if (!url) {
+            return JSON.stringify({
+              error: "Missing url",
+              message: "A valid URL is required"
+            });
+          }
+          
+          // Domain credibility factors
+          const credibilityFactors = this.analyzeDomainCredibility(url);
+          
+          // Content analysis if available
+          let contentAnalysis = {};
+          if (content) {
+            contentAnalysis = this.analyzeContentCredibility(content);
+          }
+          
+          // Metadata analysis if available
+          let metadataAnalysis = {};
+          if (metadata) {
+            metadataAnalysis = this.analyzeMetadata(metadata);
+          }
+          
+          // Calculate overall credibility score (0-100)
+          const overallScore = this.calculateCredibilityScore(
+            credibilityFactors, 
+            contentAnalysis, 
+            metadataAnalysis
+          );
+          
+          // Prepare the evaluation result
+          const result = {
+            url,
+            overallScore,
+            credibilityRating: this.getCredibilityRating(overallScore),
+            domainAnalysis: credibilityFactors,
+            contentAnalysis,
+            metadataAnalysis,
+            evaluationTimestamp: new Date().toISOString()
+          };
+          
+          return JSON.stringify(result);
+        } catch (error) {
+          logger.error("Error in CredibilityEvaluatorTool:", error);
+          return JSON.stringify({
+            error: "Failed to evaluate source credibility",
+            message: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
       }
-      
-      const parsedInput = JSON.parse(input);
-      const { url, content, metadata } = parsedInput;
-      
-      if (!url) {
-        return JSON.stringify({
-          error: "Missing url",
-          message: "A valid URL is required"
-        });
-      }
-      
-      // Domain credibility factors
-      const credibilityFactors = this.analyzeDomainCredibility(url);
-      
-      // Content analysis if available
-      let contentAnalysis = {};
-      if (content) {
-        contentAnalysis = this.analyzeContentCredibility(content);
-      }
-      
-      // Metadata analysis if available
-      let metadataAnalysis = {};
-      if (metadata) {
-        metadataAnalysis = this.analyzeMetadata(metadata);
-      }
-      
-      // Calculate overall credibility score (0-100)
-      const overallScore = this.calculateCredibilityScore(
-        credibilityFactors, 
-        contentAnalysis, 
-        metadataAnalysis
-      );
-      
-      // Prepare the evaluation result
-      const result = {
-        url,
-        overallScore,
-        credibilityRating: this.getCredibilityRating(overallScore),
-        domainAnalysis: credibilityFactors,
-        contentAnalysis,
-        metadataAnalysis,
-        evaluationTimestamp: new Date().toISOString()
-      };
-      
-      return JSON.stringify(result);
-    } catch (error) {
-      console.error("Error in CredibilityEvaluatorTool:", error);
-      return JSON.stringify({
-        error: "Failed to evaluate source credibility",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+    });
   }
   
   private analyzeDomainCredibility(url: string) {

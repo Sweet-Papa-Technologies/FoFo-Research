@@ -1,112 +1,107 @@
-import { Tool } from "@langchain/core/tools";
-import { z } from 'zod';
+import { DynamicTool } from "@langchain/core/tools";
+import { logger } from "../../utils/logger";
 
 /**
  * Custom tool for assessing the quality and completeness of research
  * Evaluates research depth, breadth, and reliability
  */
-export class QualityAssessorTool extends Tool {
-  static schema = z.object({
-    input: z.string().describe("JSON string containing topic, sources, keyFindings, and optional researchGoal")
-  });
-
-  name: string;
-  description: string;
-
+export class QualityAssessorTool extends DynamicTool {
   constructor() {
-    super();
-    this.name = "quality_assessor";
-    this.description = "Assesses the quality, depth, and completeness of research. Input should be a JSON string with topic, sources (array), keyFindings (array), and optional researchGoal.";
-  }
-
-  async _call(input: string): Promise<string> {
-    try {
-      // Handle undefined or empty input
-      if (!input || input === "undefined") {
-        return JSON.stringify({
-          error: "Invalid input",
-          message: "Input must be a valid JSON string containing topic, sources, and keyFindings"
-        });
+    super({
+      name: "quality_assessor",
+      description: "Assesses the quality, depth, and completeness of research. Input should be a JSON string with topic, sources (array), keyFindings (array), and optional researchGoal.",
+      func: async (input: string): Promise<string> => {
+        try {
+          // Handle undefined or empty input
+          if (!input || input === "undefined") {
+            logger.error("QualityAssessorTool received undefined or empty input");
+            return JSON.stringify({
+              error: "Invalid input",
+              message: "Input must be a valid JSON string containing topic, sources, and keyFindings"
+            });
+          }
+          
+          const parsedInput = JSON.parse(input);
+          const { topic, sources, keyFindings, researchGoal } = parsedInput;
+          
+          // Validate required fields
+          if (!topic) {
+            return JSON.stringify({
+              error: "Missing topic",
+              message: "Research topic is required"
+            });
+          }
+          
+          if (!sources || !Array.isArray(sources) || sources.length === 0) {
+            return JSON.stringify({
+              error: "Invalid sources",
+              message: "Sources must be a non-empty array"
+            });
+          }
+          
+          if (!keyFindings || !Array.isArray(keyFindings) || keyFindings.length === 0) {
+            return JSON.stringify({
+              error: "Invalid keyFindings",
+              message: "Key findings must be a non-empty array"
+            });
+          }
+      
+          // Assess source diversity
+          const tool = this;
+          const sourceDiversity = tool.assessSourceDiversity(sources);
+          
+          // Assess source quality
+          const sourceQuality = tool.assessSourceQuality(sources);
+          
+          // Assess research completeness
+          const completeness = tool.assessCompleteness(keyFindings, topic, researchGoal);
+          
+          // Assess research depth
+          const researchDepth = tool.assessResearchDepth(sources, keyFindings);
+          
+          // Calculate overall quality score
+          const overallScore = tool.calculateOverallScore(
+            sourceDiversity.score,
+            sourceQuality.score,
+            completeness.score,
+            researchDepth.score
+          );
+          
+          // Identify gaps or improvement opportunities
+          const improvementAreas = tool.identifyImprovementAreas(
+            sourceDiversity,
+            sourceQuality,
+            completeness,
+            researchDepth
+          );
+          
+          // Prepare assessment result
+          const result = {
+            topic,
+            overallQualityScore: overallScore,
+            qualityRating: tool.getQualityRating(overallScore),
+            assessmentDetails: {
+              sourceDiversity,
+              sourceQuality,
+              completeness,
+              researchDepth
+            },
+            improvementAreas,
+            sourceCount: sources.length,
+            findingCount: keyFindings.length,
+            assessmentTimestamp: new Date().toISOString()
+          };
+          
+          return JSON.stringify(result);
+        } catch (error) {
+          logger.error("Error in QualityAssessorTool:", error);
+          return JSON.stringify({
+            error: "Failed to assess research quality",
+            message: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
       }
-      
-      const parsedInput = JSON.parse(input);
-      const { topic, sources, keyFindings, researchGoal } = parsedInput;
-      
-      // Validate required fields
-      if (!topic) {
-        return JSON.stringify({
-          error: "Missing topic",
-          message: "Research topic is required"
-        });
-      }
-      
-      if (!sources || !Array.isArray(sources) || sources.length === 0) {
-        return JSON.stringify({
-          error: "Invalid sources",
-          message: "Sources must be a non-empty array"
-        });
-      }
-      
-      if (!keyFindings || !Array.isArray(keyFindings) || keyFindings.length === 0) {
-        return JSON.stringify({
-          error: "Invalid keyFindings",
-          message: "Key findings must be a non-empty array"
-        });
-      }
-      
-      // Assess source diversity
-      const sourceDiversity = this.assessSourceDiversity(sources);
-      
-      // Assess source quality
-      const sourceQuality = this.assessSourceQuality(sources);
-      
-      // Assess research completeness
-      const completeness = this.assessCompleteness(keyFindings, topic, researchGoal);
-      
-      // Assess research depth
-      const researchDepth = this.assessResearchDepth(sources, keyFindings);
-      
-      // Calculate overall quality score
-      const overallScore = this.calculateOverallScore(
-        sourceDiversity.score,
-        sourceQuality.score,
-        completeness.score,
-        researchDepth.score
-      );
-      
-      // Identify gaps or improvement opportunities
-      const improvementAreas = this.identifyImprovementAreas(
-        sourceDiversity,
-        sourceQuality,
-        completeness,
-        researchDepth
-      );
-      
-      // Prepare assessment result
-      const result = {
-        topic,
-        overallQualityScore: overallScore,
-        qualityRating: this.getQualityRating(overallScore),
-        assessmentDetails: {
-          sourceDiversity,
-          sourceQuality,
-          completeness,
-          researchDepth
-        },
-        improvementAreas,
-        sourceCount: sources.length,
-        findingCount: keyFindings.length,
-        assessmentTimestamp: new Date().toISOString()
-      };
-      
-      return JSON.stringify(result);
-    } catch (error) {
-      console.error("Error in QualityAssessorTool:", error);
-      return JSON.stringify({
-        error: "Failed to assess research quality",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+    });
   }
   
   private assessSourceDiversity(sources: Array<{ url: string; sourceType?: string }>) {

@@ -1,84 +1,79 @@
-import { Tool } from "@langchain/core/tools";
-import { z } from 'zod';
+import { DynamicTool } from "@langchain/core/tools";
+import { logger } from "../../utils/logger";
 
 /**
  * Custom tool for formatting research reports
  * Converts research findings into structured reports with various template options
  */
-export class ReportFormatterTool extends Tool {
-  static schema = z.object({
-    input: z.string().describe("JSON string containing title, sections, optional sources, and optional formatOptions")
-  });
-
-  name: string;
-  description: string;
-
+export class ReportFormatterTool extends DynamicTool {
   constructor() {
-    super();
-    this.name = "report_formatter";
-    this.description = "Formats research findings into structured reports with template options. Input should be a JSON string with title, sections (array), optional sources (array), and optional formatOptions object.";
-  }
-
-  async _call(input: string): Promise<string> {
-    try {
-      // Handle undefined or empty input
-      if (!input || input === "undefined") {
-        return JSON.stringify({
-          error: "Invalid input",
-          message: "Input must be a valid JSON string containing title and sections"
-        });
+    super({
+      name: "report_formatter",
+      description: "Formats research findings into structured reports with template options. Input should be a JSON string with title, sections (array), optional sources (array), and optional formatOptions object.",
+      func: async (input: string): Promise<string> => {
+        try {
+          // Handle undefined or empty input
+          if (!input || input === "undefined") {
+            logger.error("ReportFormatterTool received undefined or empty input");
+            return JSON.stringify({
+              error: "Invalid input",
+              message: "Input must be a valid JSON string containing title and sections"
+            });
+          }
+          
+          const parsedInput = JSON.parse(input);
+          const { title, sections, sources = [], formatOptions = {} } = parsedInput;
+          
+          // Validate required fields
+          if (!title) {
+            return JSON.stringify({
+              error: "Missing title",
+              message: "Report title is required"
+            });
+          }
+          
+          if (!sections || !Array.isArray(sections) || sections.length === 0) {
+            return JSON.stringify({
+              error: "Invalid sections",
+              message: "Sections must be a non-empty array"
+            });
+          }
+      
+          // Set default format options
+          const options = {
+            template: formatOptions.template || "detailed",
+            includeTableOfContents: formatOptions.includeTableOfContents ?? true,
+            includeCoverPage: formatOptions.includeCoverPage ?? true,
+            includeExecutiveSummary: formatOptions.includeExecutiveSummary ?? true,
+            format: formatOptions.format || "markdown"
+          };
+          
+          // Format the report based on the selected template and options
+          const tool = this;
+          let formattedReport;
+          switch (options.format) {
+            case "html":
+              formattedReport = tool.formatAsHTML(title, sections, sources, options);
+              break;
+            case "json":
+              formattedReport = tool.formatAsJSON(title, sections, sources, options);
+              break;
+            case "markdown":
+            default:
+              formattedReport = tool.formatAsMarkdown(title, sections, sources, options);
+              break;
+          }
+          
+          return formattedReport;
+        } catch (error) {
+          logger.error("Error in ReportFormatterTool:", error);
+          return JSON.stringify({
+            error: "Failed to format report",
+            message: error instanceof Error ? error.message : "Unknown error",
+          });
+        }
       }
-      
-      const parsedInput = JSON.parse(input);
-      const { title, sections, sources = [], formatOptions = {} } = parsedInput;
-      
-      // Validate required fields
-      if (!title) {
-        return JSON.stringify({
-          error: "Missing title",
-          message: "Report title is required"
-        });
-      }
-      
-      if (!sections || !Array.isArray(sections) || sections.length === 0) {
-        return JSON.stringify({
-          error: "Invalid sections",
-          message: "Sections must be a non-empty array"
-        });
-      }
-      
-      // Set default format options
-      const options = {
-        template: formatOptions.template || "detailed",
-        includeTableOfContents: formatOptions.includeTableOfContents ?? true,
-        includeCoverPage: formatOptions.includeCoverPage ?? true,
-        includeExecutiveSummary: formatOptions.includeExecutiveSummary ?? true,
-        format: formatOptions.format || "markdown"
-      };
-      
-      // Format the report based on the selected template and options
-      let formattedReport;
-      switch (options.format) {
-        case "html":
-          formattedReport = this.formatAsHTML(title, sections, sources, options);
-          break;
-        case "json":
-          formattedReport = this.formatAsJSON(title, sections, sources, options);
-          break;
-        case "markdown":
-        default:
-          formattedReport = this.formatAsMarkdown(title, sections, sources, options);
-          break;
-      }
-      
-      return formattedReport;
-    } catch (error) {
-      console.error("Error in ReportFormatterTool:", error);
-      return JSON.stringify({
-        error: "Failed to format report",
-        message: error instanceof Error ? error.message : "Unknown error",
-      });
-    }
+    });
   }
   
   private formatAsMarkdown(
