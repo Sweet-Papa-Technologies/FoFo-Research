@@ -1,49 +1,76 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ReportFormatterTool = void 0;
-const ToolBase_1 = require("./ToolBase");
+const tools_1 = require("@langchain/core/tools");
+const logger_1 = require("../../utils/logger");
 /**
  * Custom tool for formatting research reports
  * Converts research findings into structured reports with various template options
  */
-class ReportFormatterTool extends ToolBase_1.ToolBase {
+class ReportFormatterTool extends tools_1.DynamicTool {
     constructor() {
-        super("report_formatter", "Formats research findings into structured reports with template options");
-    }
-    async _call(input) {
-        try {
-            const { title, sections, sources = [], formatOptions = {} } = input;
-            // Set default format options
-            const options = {
-                template: formatOptions.template || "detailed",
-                includeTableOfContents: formatOptions.includeTableOfContents ?? true,
-                includeCoverPage: formatOptions.includeCoverPage ?? true,
-                includeExecutiveSummary: formatOptions.includeExecutiveSummary ?? true,
-                format: formatOptions.format || "markdown"
-            };
-            // Format the report based on the selected template and options
-            let formattedReport;
-            switch (options.format) {
-                case "html":
-                    formattedReport = this.formatAsHTML(title, sections, sources, options);
-                    break;
-                case "json":
-                    formattedReport = this.formatAsJSON(title, sections, sources, options);
-                    break;
-                case "markdown":
-                default:
-                    formattedReport = this.formatAsMarkdown(title, sections, sources, options);
-                    break;
+        super({
+            name: "report_formatter",
+            description: "Formats research findings into structured reports with template options. Input should be a JSON string with title, sections (array), optional sources (array), and optional formatOptions object.",
+            func: async (input) => {
+                try {
+                    // Handle undefined or empty input
+                    if (!input || input === "undefined") {
+                        logger_1.logger.error("ReportFormatterTool received undefined or empty input");
+                        return JSON.stringify({
+                            error: "Invalid input",
+                            message: "Input must be a valid JSON string containing title and sections"
+                        });
+                    }
+                    const parsedInput = JSON.parse(input);
+                    const { title, sections, sources = [], formatOptions = {} } = parsedInput;
+                    // Validate required fields
+                    if (!title) {
+                        return JSON.stringify({
+                            error: "Missing title",
+                            message: "Report title is required"
+                        });
+                    }
+                    if (!sections || !Array.isArray(sections) || sections.length === 0) {
+                        return JSON.stringify({
+                            error: "Invalid sections",
+                            message: "Sections must be a non-empty array"
+                        });
+                    }
+                    // Set default format options
+                    const options = {
+                        template: formatOptions.template || "detailed",
+                        includeTableOfContents: formatOptions.includeTableOfContents ?? true,
+                        includeCoverPage: formatOptions.includeCoverPage ?? true,
+                        includeExecutiveSummary: formatOptions.includeExecutiveSummary ?? true,
+                        format: formatOptions.format || "markdown"
+                    };
+                    // Format the report based on the selected template and options
+                    const tool = this;
+                    let formattedReport;
+                    switch (options.format) {
+                        case "html":
+                            formattedReport = tool.formatAsHTML(title, sections, sources, options);
+                            break;
+                        case "json":
+                            formattedReport = tool.formatAsJSON(title, sections, sources, options);
+                            break;
+                        case "markdown":
+                        default:
+                            formattedReport = tool.formatAsMarkdown(title, sections, sources, options);
+                            break;
+                    }
+                    return formattedReport;
+                }
+                catch (error) {
+                    logger_1.logger.error("Error in ReportFormatterTool:", error);
+                    return JSON.stringify({
+                        error: "Failed to format report",
+                        message: error instanceof Error ? error.message : "Unknown error",
+                    });
+                }
             }
-            return formattedReport;
-        }
-        catch (error) {
-            console.error("Error in ReportFormatterTool:", error);
-            return JSON.stringify({
-                error: "Failed to format report",
-                message: error instanceof Error ? error.message : "Unknown error",
-            });
-        }
+        });
     }
     formatAsMarkdown(title, sections, sources, options) {
         let markdown = "";

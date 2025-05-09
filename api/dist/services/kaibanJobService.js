@@ -10,7 +10,7 @@ const reportService_1 = require("./reportService");
  */
 class KaibanJobService {
     constructor() {
-        // Initialize the research orchestrator
+        // Initialize the research orchestrator with default env config
         this.orchestrator = new ResearchOrchestrator_1.ResearchOrchestrator();
         logger_1.logger.info('KaibanJobService initialized successfully');
     }
@@ -20,6 +20,12 @@ class KaibanJobService {
     async processJob(job) {
         try {
             logger_1.logger.info(`Processing job ${job.id} with KaibanJS: ${job.topic}`);
+            // Create a new orchestrator instance for each job with the specific model config
+            const jobOrchestrator = new ResearchOrchestrator_1.ResearchOrchestrator({
+                provider: job.models.primary.provider,
+                model: job.models.primary.model,
+                apiKey: process.env.LLM_API_KEY // Use environment variable for API key
+            });
             // Convert the job configuration to KaibanJS inputs
             const kaibanInputs = {
                 topic: job.topic,
@@ -33,8 +39,9 @@ class KaibanJobService {
                     temperature: job.models.primary.temperature
                 }
             };
-            // Execute the research workflow
-            const result = await this.orchestrator.executeResearch(kaibanInputs);
+            logger_1.logger.info(`Using model: ${job.models.primary.model} with provider: ${job.models.primary.provider}`);
+            // Execute the research workflow with the job-specific orchestrator
+            const result = await jobOrchestrator.executeResearch(kaibanInputs);
             if (result.status === 'SUCCESS') {
                 logger_1.logger.info(`Job ${job.id} completed successfully with KaibanJS`);
                 // Save the report

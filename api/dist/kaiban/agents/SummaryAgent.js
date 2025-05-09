@@ -18,27 +18,26 @@ class SummaryAgent {
             // Initialize tools
             this.qualityAssessorTool = new QualityAssessorTool_1.QualityAssessorTool();
             this.reportFormatterTool = new ReportFormatterTool_1.ReportFormatterTool();
-            // Convert tools to the format expected by KaibanJS
-            const toolsForAgent = [
-                {
-                    name: this.qualityAssessorTool.name,
-                    description: this.qualityAssessorTool.description,
-                    func: async (args) => this.qualityAssessorTool._call(args)
-                },
-                {
-                    name: this.reportFormatterTool.name,
-                    description: this.reportFormatterTool.description,
-                    func: async (args) => this.reportFormatterTool._call(args)
-                }
-            ];
-            // Initialize the agent with the tools
+            // Create a custom llmConfig with the provided model parameters if available
+            const agentLlmConfig = {
+                provider: config?.provider || llmConfig_1.llmConfig.provider,
+                model: config?.model || llmConfig_1.llmConfig.model,
+                apiKey: llmConfig_1.llmConfig.apiKey,
+                apiBaseUrl: llmConfig_1.llmConfig.apiBaseUrl
+            };
+            logger_1.logger.info(`SummaryAgent initializing with model: ${agentLlmConfig.model}, provider: ${agentLlmConfig.provider}`);
+            // Initialize the agent with the tools and custom llmConfig
+            // Pass the tool instances directly to the agent with type casting
             this.agent = new kaibanjs_1.Agent({
                 name: 'Synthesizer',
                 role: 'Research Synthesizer',
                 goal: 'Synthesize information from multiple sources into coherent, structured reports',
                 background: 'Expert in information synthesis, knowledge distillation, and clear communication',
-                tools: toolsForAgent,
-                llmConfig: llmConfig_1.llmConfig
+                tools: [
+                    this.qualityAssessorTool,
+                    this.reportFormatterTool
+                ], // Type cast as any to avoid TypeScript errors
+                llmConfig: agentLlmConfig
             });
             logger_1.logger.info('SummaryAgent initialized successfully');
         }

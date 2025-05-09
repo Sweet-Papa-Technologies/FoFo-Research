@@ -2,7 +2,7 @@
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.SearchAgent = void 0;
 const kaibanjs_1 = require("kaibanjs");
-const searchService_1 = require("../../services/searchService");
+const SearchTool_1 = require("../tools/SearchTool");
 const logger_1 = require("../../utils/logger");
 const llmConfig_1 = require("./llmConfig");
 /**
@@ -14,46 +14,32 @@ const llmConfig_1 = require("./llmConfig");
 class SearchAgent {
     constructor(config) {
         try {
-            // Initialize search tool - in this app we have our own searchService
-            // but we wrap it as a LangChain-compatible tool
-            this.searchTool = {
-                name: "search",
-                description: "Search for information using the DuckDuckGo search engine",
-                schema: {
-                    type: "object",
-                    properties: {
-                        query: {
-                            type: "string",
-                            description: "The search query"
-                        },
-                        maxResults: {
-                            type: "number",
-                            description: "Maximum number of results to return"
-                        }
-                    },
-                    required: ["query"]
-                },
-                _call: async (input) => {
-                    const { query, maxResults = 5 } = input;
-                    logger_1.logger.info(`SearchAgent performing search: "${query}"`);
-                    try {
-                        const results = await searchService_1.searchService.search(query, { maxResults });
-                        return JSON.stringify(results);
-                    }
-                    catch (error) {
-                        logger_1.logger.error(`Search error: ${error}`);
-                        return JSON.stringify({ error: "Search failed", message: error instanceof Error ? error.message : String(error) });
-                    }
-                }
+            // Initialize search tool using our proper Tool implementation
+            this.searchTool = new SearchTool_1.SearchTool();
+            // Create a custom llmConfig with the provided model parameters if available
+            const agentLlmConfig = {
+                provider: config?.provider || llmConfig_1.llmConfig.provider,
+                model: config?.model || llmConfig_1.llmConfig.model,
+                apiKey: config?.apiKey || llmConfig_1.llmConfig.apiKey,
+                apiBaseUrl: llmConfig_1.llmConfig.apiBaseUrl
             };
-            // Initialize the agent with the search tool
+            logger_1.logger.info(`SearchAgent initializing with model: ${agentLlmConfig.model}, provider: ${agentLlmConfig.provider}`);
+            // Initialize the agent with the search tool and custom llmConfig
             this.agent = new kaibanjs_1.Agent({
                 name: 'Scout',
                 role: 'Search Specialist',
                 goal: 'Find the most relevant information about the research topic and identify valuable sources',
                 background: 'Expert in search query formulation, source evaluation, and iterative research refinement',
-                tools: [this.searchTool],
-                llmConfig: llmConfig_1.llmConfig
+                // systemMessage: `You are a research specialist with access to a custom "search" tool.
+                //   IMPORTANT: Do NOT look for or try to use a tool named "tavily_search_results_json" - it does not exist.
+                //   Instead, ALWAYS use the "search" tool for research tasks. The search tool works in two ways:
+                //   1. With a simple string query: search("dogs")
+                //   2. With a JSON object: search({"query": "dogs", "maxResults": 5})
+                //   The search tool returns results in JSON format including title, url, and description of each result.
+                //   After getting search results, analyze them directly - do not try to use other tools to process the results.
+                //   Work with the JSON results as they are provided by the search tool.`,
+                tools: [this.searchTool], // Type cast as any to avoid TypeScript errors
+                llmConfig: agentLlmConfig
             });
             logger_1.logger.info('SearchAgent initialized successfully');
         }

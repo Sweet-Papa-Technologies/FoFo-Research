@@ -42,12 +42,15 @@ class ResearchTeam {
             const performSearchTask = new kaibanjs_1.Task({
                 title: 'Perform search',
                 description: `
-          Use the search tool to execute the queries from the previous task: {taskResult:task1}
+          Use the "search" tool to execute the queries from the previous task: {taskResult:task1}
           
           For each query:
-          1. Execute the search
+          1. Execute the search by calling the search tool with the query
+             Example: search("your query here") or search({"query": "your query here", "maxResults": 5})
           2. Evaluate the results for relevance
           3. Identify the most promising sources
+          
+          IMPORTANT: Use ONLY the "search" tool - do not attempt to use any other tools.
           
           Return a JSON object with the query results, including URLs and brief descriptions.
         `,
@@ -59,10 +62,14 @@ class ResearchTeam {
                 description: `
           Analyze the content from the search results: {taskResult:task2}
           
-          For each URL with a screenshot:
-          1. Extract key information using screenshot_analyzer
-          2. Evaluate source credibility using credibility_evaluator
+          For each URL:
+          1. Extract key information using screenshot_analyzer tool
+             Example: screenshot_analyzer({"screenshotId": "id-here", "analysisType": "full"})
+          2. Evaluate source credibility using credibility_evaluator tool
+             Example: credibility_evaluator({"url": "url-here", "content": "content-text-here"})
           3. Identify the most valuable insights
+          
+          IMPORTANT: Only use the tools that are explicitly provided to you (screenshot_analyzer and credibility_evaluator).
           
           Return a structured analysis of each source, including extracted information, credibility assessment, and key insights.
         `,

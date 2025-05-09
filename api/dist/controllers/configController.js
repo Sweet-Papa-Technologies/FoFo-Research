@@ -24,7 +24,7 @@ const getAvailableModels = async (req, res, next) => {
                     {
                         id: 'gemma-3-27b-it-abliterated',
                         provider: 'openai',
-                        name: 'Gemma 3.27b',
+                        name: 'Gemma3 27b',
                         capabilities: ['text', 'vision'],
                         defaultParameters: {
                             temperature: 0.3,
@@ -51,7 +51,7 @@ const getAvailableModels = async (req, res, next) => {
                 ]
             },
             {
-                id: 'local',
+                id: 'openai',
                 name: 'LM Studio',
                 models: [
                     {
@@ -73,7 +73,7 @@ const getAvailableModels = async (req, res, next) => {
                         defaultParameters: {
                             temperature: 0.4,
                             topP: 0.9,
-                            maxTokens: 12000
+                            maxTokens: 2000
                         }
                     }
                 ]
@@ -116,17 +116,16 @@ const getSystemConfig = async (req, res, next) => {
                 },
                 fallback: {
                     provider: 'openai',
-                    model: 'gemma-3-27b-it-abliterated',
-                    temperature: 0.3,
-                    topP: 0.95,
-                    maxTokens: 12000
+                    model: 'gemma3-27b',
+                    temperature: 0.5,
+                    topP: 0.9,
+                    maxTokens: 2000
                 },
                 vision: {
                     provider: 'openai',
-                    model: 'gemma-3-27b-it-abliterated',
-                    temperature: 0.3,
-                    topP: 0.95,
-                    maxTokens: 12000
+                    model: 'gpt-4o',
+                    temperature: 0.2,
+                    maxTokens: 1000
                 }
             },
             search: {

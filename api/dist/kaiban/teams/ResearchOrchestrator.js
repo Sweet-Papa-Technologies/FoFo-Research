@@ -14,9 +14,15 @@ const captureService_1 = require("../../services/captureService");
  */
 class ResearchOrchestrator {
     constructor(config) {
-        this.researchTeam = new ResearchTeam_1.ResearchTeam(config);
-        this.synthesisTeam = new SynthesisTeam_1.SynthesisTeam(config);
-        logger_1.logger.info('ResearchOrchestrator initialized successfully');
+        // Use environment variables as defaults if no config provided
+        const modelConfig = {
+            model: config?.model || process.env.LLM_MODEL,
+            provider: config?.provider || process.env.LLM_PROVIDER,
+            apiKey: config?.apiKey || process.env.LLM_API_KEY
+        };
+        this.researchTeam = new ResearchTeam_1.ResearchTeam(modelConfig);
+        this.synthesisTeam = new SynthesisTeam_1.SynthesisTeam(modelConfig);
+        logger_1.logger.info(`ResearchOrchestrator initialized with model: ${modelConfig.model}, provider: ${modelConfig.provider}`);
     }
     /**
      * Execute the full research workflow

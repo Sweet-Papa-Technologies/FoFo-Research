@@ -1,55 +1,88 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.QualityAssessorTool = void 0;
-const ToolBase_1 = require("./ToolBase");
+const tools_1 = require("@langchain/core/tools");
+const logger_1 = require("../../utils/logger");
 /**
  * Custom tool for assessing the quality and completeness of research
  * Evaluates research depth, breadth, and reliability
  */
-class QualityAssessorTool extends ToolBase_1.ToolBase {
+class QualityAssessorTool extends tools_1.DynamicTool {
     constructor() {
-        super("quality_assessor", "Assesses the quality, depth, and completeness of research");
-    }
-    async _call(input) {
-        try {
-            const { topic, sources, keyFindings, researchGoal } = input;
-            // Assess source diversity
-            const sourceDiversity = this.assessSourceDiversity(sources);
-            // Assess source quality
-            const sourceQuality = this.assessSourceQuality(sources);
-            // Assess research completeness
-            const completeness = this.assessCompleteness(keyFindings, topic, researchGoal);
-            // Assess research depth
-            const researchDepth = this.assessResearchDepth(sources, keyFindings);
-            // Calculate overall quality score
-            const overallScore = this.calculateOverallScore(sourceDiversity.score, sourceQuality.score, completeness.score, researchDepth.score);
-            // Identify gaps or improvement opportunities
-            const improvementAreas = this.identifyImprovementAreas(sourceDiversity, sourceQuality, completeness, researchDepth);
-            // Prepare assessment result
-            const result = {
-                topic,
-                overallQualityScore: overallScore,
-                qualityRating: this.getQualityRating(overallScore),
-                assessmentDetails: {
-                    sourceDiversity,
-                    sourceQuality,
-                    completeness,
-                    researchDepth
-                },
-                improvementAreas,
-                sourceCount: sources.length,
-                findingCount: keyFindings.length,
-                assessmentTimestamp: new Date().toISOString()
-            };
-            return JSON.stringify(result);
-        }
-        catch (error) {
-            console.error("Error in QualityAssessorTool:", error);
-            return JSON.stringify({
-                error: "Failed to assess research quality",
-                message: error instanceof Error ? error.message : "Unknown error",
-            });
-        }
+        super({
+            name: "quality_assessor",
+            description: "Assesses the quality, depth, and completeness of research. Input should be a JSON string with topic, sources (array), keyFindings (array), and optional researchGoal.",
+            func: async (input) => {
+                try {
+                    // Handle undefined or empty input
+                    if (!input || input === "undefined") {
+                        logger_1.logger.error("QualityAssessorTool received undefined or empty input");
+                        return JSON.stringify({
+                            error: "Invalid input",
+                            message: "Input must be a valid JSON string containing topic, sources, and keyFindings"
+                        });
+                    }
+                    const parsedInput = JSON.parse(input);
+                    const { topic, sources, keyFindings, researchGoal } = parsedInput;
+                    // Validate required fields
+                    if (!topic) {
+                        return JSON.stringify({
+                            error: "Missing topic",
+                            message: "Research topic is required"
+                        });
+                    }
+                    if (!sources || !Array.isArray(sources) || sources.length === 0) {
+                        return JSON.stringify({
+                            error: "Invalid sources",
+                            message: "Sources must be a non-empty array"
+                        });
+                    }
+                    if (!keyFindings || !Array.isArray(keyFindings) || keyFindings.length === 0) {
+                        return JSON.stringify({
+                            error: "Invalid keyFindings",
+                            message: "Key findings must be a non-empty array"
+                        });
+                    }
+                    // Assess source diversity
+                    const tool = this;
+                    const sourceDiversity = tool.assessSourceDiversity(sources);
+                    // Assess source quality
+                    const sourceQuality = tool.assessSourceQuality(sources);
+                    // Assess research completeness
+                    const completeness = tool.assessCompleteness(keyFindings, topic, researchGoal);
+                    // Assess research depth
+                    const researchDepth = tool.assessResearchDepth(sources, keyFindings);
+                    // Calculate overall quality score
+                    const overallScore = tool.calculateOverallScore(sourceDiversity.score, sourceQuality.score, completeness.score, researchDepth.score);
+                    // Identify gaps or improvement opportunities
+                    const improvementAreas = tool.identifyImprovementAreas(sourceDiversity, sourceQuality, completeness, researchDepth);
+                    // Prepare assessment result
+                    const result = {
+                        topic,
+                        overallQualityScore: overallScore,
+                        qualityRating: tool.getQualityRating(overallScore),
+                        assessmentDetails: {
+                            sourceDiversity,
+                            sourceQuality,
+                            completeness,
+                            researchDepth
+                        },
+                        improvementAreas,
+                        sourceCount: sources.length,
+                        findingCount: keyFindings.length,
+                        assessmentTimestamp: new Date().toISOString()
+                    };
+                    return JSON.stringify(result);
+                }
+                catch (error) {
+                    logger_1.logger.error("Error in QualityAssessorTool:", error);
+                    return JSON.stringify({
+                        error: "Failed to assess research quality",
+                        message: error instanceof Error ? error.message : "Unknown error",
+                    });
+                }
+            }
+        });
     }
     assessSourceDiversity(sources) {
         // Extract domains from URLs

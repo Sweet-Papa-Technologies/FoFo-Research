@@ -18,27 +18,33 @@ class ContentAgent {
             // Initialize tools
             this.screenshotAnalyzerTool = new ScreenshotAnalyzerTool_1.ScreenshotAnalyzerTool();
             this.credibilityEvaluatorTool = new CredibilityEvaluatorTool_1.CredibilityEvaluatorTool();
-            // Convert tools to the format expected by KaibanJS
-            const toolsForAgent = [
-                {
-                    name: this.screenshotAnalyzerTool.name,
-                    description: this.screenshotAnalyzerTool.description,
-                    func: async (args) => this.screenshotAnalyzerTool._call(args)
-                },
-                {
-                    name: this.credibilityEvaluatorTool.name,
-                    description: this.credibilityEvaluatorTool.description,
-                    func: async (args) => this.credibilityEvaluatorTool._call(args)
-                }
-            ];
-            // Initialize the agent with the tools
+            // Create a custom llmConfig with the provided model parameters if available
+            const agentLlmConfig = {
+                provider: config?.provider || llmConfig_1.llmConfig.provider,
+                model: config?.model || llmConfig_1.llmConfig.model,
+                apiKey: llmConfig_1.llmConfig.apiKey,
+                apiBaseUrl: llmConfig_1.llmConfig.apiBaseUrl
+            };
+            logger_1.logger.info(`ContentAgent initializing with model: ${agentLlmConfig.model}, provider: ${agentLlmConfig.provider}`);
+            // Initialize the agent with the tools and custom llmConfig
+            // Pass the tool instances directly to the agent with type casting
             this.agent = new kaibanjs_1.Agent({
                 name: 'Visioneer',
                 role: 'Content Analyst',
                 goal: 'Extract and analyze information from web content screenshots, evaluate credibility, and identify key insights',
                 background: 'Expert in visual content analysis, information extraction, and source evaluation',
-                tools: toolsForAgent,
-                llmConfig: llmConfig_1.llmConfig
+                // systemMessage: `You are a content analysis specialist with access to two specific tools:
+                //   1. "screenshot_analyzer" - Use this to analyze screenshot content
+                //      Usage: screenshot_analyzer({"screenshotId": "id-here", "analysisType": "full"})
+                //   2. "credibility_evaluator" - Use this to evaluate source credibility
+                //      Usage: credibility_evaluator({"url": "url-here", "content": "content-text-here"})
+                //   IMPORTANT: Do NOT attempt to use any other tools that don't exist in your toolkit.
+                //   Work directly with the results provided by these tools without trying to use additional tools.`,
+                tools: [
+                    this.screenshotAnalyzerTool,
+                    this.credibilityEvaluatorTool
+                ], // Type cast as any to avoid TypeScript errors
+                llmConfig: agentLlmConfig
             });
             logger_1.logger.info('ContentAgent initialized successfully');
         }
