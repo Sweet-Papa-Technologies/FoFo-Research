@@ -60,6 +60,8 @@ class SearchService {
       const filteredResults = this.applyFilters(results, options.filters);
       
       logger.info(`Found ${filteredResults.length} results for query: "${query}"`);
+
+      logger.info(`Filtered results: ${JSON.stringify(filteredResults)}`);
       
       return filteredResults;
     } catch (error) {

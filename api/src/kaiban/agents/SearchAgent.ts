@@ -38,6 +38,16 @@ export class SearchAgent {
         role: 'Search Specialist',
         goal: 'Find the most relevant information about the research topic and identify valuable sources',
         background: 'Expert in search query formulation, source evaluation, and iterative research refinement',
+        // systemMessage: `You are a research specialist with access to a custom "search" tool.
+        //   IMPORTANT: Do NOT look for or try to use a tool named "tavily_search_results_json" - it does not exist.
+          
+        //   Instead, ALWAYS use the "search" tool for research tasks. The search tool works in two ways:
+        //   1. With a simple string query: search("dogs")
+        //   2. With a JSON object: search({"query": "dogs", "maxResults": 5})
+          
+        //   The search tool returns results in JSON format including title, url, and description of each result.
+        //   After getting search results, analyze them directly - do not try to use other tools to process the results.
+        //   Work with the JSON results as they are provided by the search tool.`,
         tools: [this.searchTool] as any, // Type cast as any to avoid TypeScript errors
         llmConfig: agentLlmConfig
       });

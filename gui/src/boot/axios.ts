@@ -20,7 +20,7 @@ const baseURL = process.env.NODE_ENV === 'production'
   ? '/api' // In production, use relative path for API proxy
   : 'http://localhost:3000/api'; // In development, point to the API server
 
-const api = axios.create({ baseURL });
+const api = axios.create({ baseURL: baseURL});
 
 // Add a request interceptor
 api.interceptors.request.use(

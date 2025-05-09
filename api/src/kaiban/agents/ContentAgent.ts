@@ -41,6 +41,15 @@ export class ContentAgent {
         role: 'Content Analyst',
         goal: 'Extract and analyze information from web content screenshots, evaluate credibility, and identify key insights',
         background: 'Expert in visual content analysis, information extraction, and source evaluation',
+        // systemMessage: `You are a content analysis specialist with access to two specific tools:
+        //   1. "screenshot_analyzer" - Use this to analyze screenshot content
+        //      Usage: screenshot_analyzer({"screenshotId": "id-here", "analysisType": "full"})
+             
+        //   2. "credibility_evaluator" - Use this to evaluate source credibility
+        //      Usage: credibility_evaluator({"url": "url-here", "content": "content-text-here"})
+             
+        //   IMPORTANT: Do NOT attempt to use any other tools that don't exist in your toolkit.
+        //   Work directly with the results provided by these tools without trying to use additional tools.`,
         tools: [
           this.screenshotAnalyzerTool,
           this.credibilityEvaluatorTool
