@@ -2,7 +2,7 @@ import axios from 'axios';
 import { logger } from '../utils/logger';
 import { AppError } from '../utils/errorHandler';
 import { browserService, PageMetadata, NavigationOptions } from './browserService';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import puppeteer, { PuppeteerLifeCycleEvent } from 'puppeteer';
 
 interface SearchResult {
@@ -83,7 +83,15 @@ class SearchService {
       // for a more interactive approach (e.g., to handle JavaScript-based results)
       if (results.length < maxResults) {
         logger.info(`Only found ${results.length} results with basic parsing, trying Puppeteer`);
-        results = await this.parseWithPuppeteer(html, maxResults);
+        try {
+          const puppeteerResults = await this.parseWithPuppeteer(html, maxResults);
+          if (puppeteerResults && puppeteerResults.length > 0) {
+            results = puppeteerResults;
+          }
+        } catch (puppeteerError) {
+          logger.error(`Error using Puppeteer to parse results: ${puppeteerError}`);
+          // Continue with the results we already have
+        }
       }
       
       // Normalize and clean results
@@ -91,8 +99,7 @@ class SearchService {
       return cleanResults;
     } catch (error) {
       logger.error(`Error parsing search results: ${error}`);
-      // Fall back to mock results if parsing fails
-throw error;
+      throw error;
     }
   }
   
@@ -421,10 +428,12 @@ throw error;
       
       // Close the page on error
       if (page) {
-        await page.close().catch(() => {});
+        await page.close().catch((closeError) => {
+          logger.error(`Error closing page: ${closeError}`);
+        });
       }
       
-      throw error;
+      throw new Error(`Puppeteer parsing failed: ${error}`);
     }
   }
   
@@ -1257,40 +1266,6 @@ throw error;
     return Array.from(uniqueUrls.values());
   }
   
-  /**
-   * Get mock results for development or fallback
-   */
-  private getMockResults(maxResults: number): SearchResult[] {
-    const mockResults: SearchResult[] = [
-      {
-        title: 'What is Climate Change? | NASA',
-        url: 'https://climate.nasa.gov/resources/global-warming-vs-climate-change/',
-        description: 'Climate change is a long-term alteration in Earth\'s climate and weather patterns. It is broader than just global warming...'
-      },
-      {
-        title: 'Climate Change Evidence and Causes | Royal Society',
-        url: 'https://royalsociety.org/topics-policy/projects/climate-change-evidence-causes/',
-        description: 'The Royal Society and the US National Academy of Sciences, with their similar missions to promote the use of science...'
-      },
-      {
-        title: 'Climate Change | United Nations',
-        url: 'https://www.un.org/en/global-issues/climate-change',
-        description: 'Climate Change is the defining issue of our time and we are at a defining moment. From shifting weather patterns that threaten food production...'
-      },
-      {
-        title: 'Global Warming vs. Climate Change | Resources – Climate Change: Vital Signs of the Planet',
-        url: 'https://climate.nasa.gov/global-warming-vs-climate-change/',
-        description: 'Global warming refers only to the Earth\'s rising surface temperature, while climate change includes warming and the side effects of warming.'
-      },
-      {
-        title: 'Climate change - Wikipedia',
-        url: 'https://en.wikipedia.org/wiki/Climate_change',
-        description: 'Climate change includes both global warming driven by human emissions of greenhouse gases, and the resulting large-scale shifts in weather patterns.'
-      }
-    ];
-    
-    return mockResults.slice(0, maxResults);
-  }
   
   private applyFilters(results: SearchResult[], filters?: SearchOptions['filters']): SearchResult[] {
     if (!filters) {

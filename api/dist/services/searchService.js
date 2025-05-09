@@ -1,4 +1,37 @@
 "use strict";
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -8,7 +41,7 @@ const axios_1 = __importDefault(require("axios"));
 const logger_1 = require("../utils/logger");
 const errorHandler_1 = require("../utils/errorHandler");
 const browserService_1 = require("./browserService");
-const cheerio_1 = __importDefault(require("cheerio"));
+const cheerio = __importStar(require("cheerio"));
 /**
  * Service for handling web search operations
  */
@@ -57,7 +90,16 @@ class SearchService {
             // for a more interactive approach (e.g., to handle JavaScript-based results)
             if (results.length < maxResults) {
                 logger_1.logger.info(`Only found ${results.length} results with basic parsing, trying Puppeteer`);
-                results = await this.parseWithPuppeteer(html, maxResults);
+                try {
+                    const puppeteerResults = await this.parseWithPuppeteer(html, maxResults);
+                    if (puppeteerResults && puppeteerResults.length > 0) {
+                        results = puppeteerResults;
+                    }
+                }
+                catch (puppeteerError) {
+                    logger_1.logger.error(`Error using Puppeteer to parse results: ${puppeteerError}`);
+                    // Continue with the results we already have
+                }
             }
             // Normalize and clean results
             const cleanResults = this.normalizeResults(results, maxResults);
@@ -65,8 +107,7 @@ class SearchService {
         }
         catch (error) {
             logger_1.logger.error(`Error parsing search results: ${error}`);
-            // Fall back to mock results if parsing fails
-            return this.getMockResults(maxResults);
+            throw error;
         }
     }
     /**
@@ -74,7 +115,7 @@ class SearchService {
      * This handles different search engine result formats
      */
     parseHtmlWithCheerio(html, maxResults) {
-        const $ = cheerio_1.default.load(html);
+        const $ = cheerio.load(html);
         let results = [];
         // Try multiple parsing strategies for better robustness
         // Strategy 1: DuckDuckGo specific selectors
@@ -289,7 +330,7 @@ class SearchService {
             // Extract the query from the HTML if possible
             let searchQuery = '';
             try {
-                const $ = cheerio_1.default.load(html);
+                const $ = cheerio.load(html);
                 const inputVal = $('input[name="q"]').val();
                 searchQuery = typeof inputVal === 'string' ? inputVal : (Array.isArray(inputVal) ? inputVal[0] : '');
                 logger_1.logger.info(`Extracted search query: "${searchQuery}"`);
@@ -349,10 +390,11 @@ class SearchService {
             logger_1.logger.error(`Puppeteer parsing failed: ${error}`);
             // Close the page on error
             if (page) {
-                await page.close().catch(() => { });
+                await page.close().catch((closeError) => {
+                    logger_1.logger.error(`Error closing page: ${closeError}`);
+                });
             }
-            // Fall back to mock results
-            return this.getMockResults(maxResults);
+            throw new Error(`Puppeteer parsing failed: ${error}`);
         }
     }
     /**
@@ -1065,39 +1107,6 @@ class SearchService {
             }
         }
         return Array.from(uniqueUrls.values());
-    }
-    /**
-     * Get mock results for development or fallback
-     */
-    getMockResults(maxResults) {
-        const mockResults = [
-            {
-                title: 'What is Climate Change? | NASA',
-                url: 'https://climate.nasa.gov/resources/global-warming-vs-climate-change/',
-                description: 'Climate change is a long-term alteration in Earth\'s climate and weather patterns. It is broader than just global warming...'
-            },
-            {
-                title: 'Climate Change Evidence and Causes | Royal Society',
-                url: 'https://royalsociety.org/topics-policy/projects/climate-change-evidence-causes/',
-                description: 'The Royal Society and the US National Academy of Sciences, with their similar missions to promote the use of science...'
-            },
-            {
-                title: 'Climate Change | United Nations',
-                url: 'https://www.un.org/en/global-issues/climate-change',
-                description: 'Climate Change is the defining issue of our time and we are at a defining moment. From shifting weather patterns that threaten food production...'
-            },
-            {
-                title: 'Global Warming vs. Climate Change | Resources – Climate Change: Vital Signs of the Planet',
-                url: 'https://climate.nasa.gov/global-warming-vs-climate-change/',
-                description: 'Global warming refers only to the Earth\'s rising surface temperature, while climate change includes warming and the side effects of warming.'
-            },
-            {
-                title: 'Climate change - Wikipedia',
-                url: 'https://en.wikipedia.org/wiki/Climate_change',
-                description: 'Climate change includes both global warming driven by human emissions of greenhouse gases, and the resulting large-scale shifts in weather patterns.'
-            }
-        ];
-        return mockResults.slice(0, maxResults);
     }
     applyFilters(results, filters) {
         if (!filters) {
