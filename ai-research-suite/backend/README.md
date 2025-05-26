@@ -30,10 +30,40 @@ Backend API server for the AI-Powered Research Suite, built with Node.js, Expres
    npm run migrate
    ```
 
-4. **Start development server**:
+4. **Create test users** (optional):
+   ```bash
+   npm run seed:test-user
+   ```
+   This creates two test accounts:
+   - **Regular User**: `test@example.com` / `testpassword123`
+   - **Admin User**: `admin@example.com` / `adminpassword123`
+
+5. **Start development server**:
    ```bash
    npm run dev
    ```
+
+## Authentication
+
+The API uses JWT authentication. To access protected endpoints:
+
+1. **Register a new account** or **login** with existing credentials
+2. Include the token in the `Authorization` header: `Bearer <token>`
+3. Tokens expire after 7 days by default
+
+Example authentication flow:
+```bash
+# 1. Login to get a token
+curl -X POST http://localhost:8080/api/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{"email": "test@example.com", "password": "testpassword123"}'
+
+# 2. Use the token for authenticated requests
+curl -X POST http://localhost:8080/api/v1/research \
+  -H "Authorization: Bearer <your-token-here>" \
+  -H "Content-Type: application/json" \
+  -d '{"topic": "AI in healthcare", "parameters": {"maxSources": 20}}'
+```
 
 ## LLM Configuration
 
