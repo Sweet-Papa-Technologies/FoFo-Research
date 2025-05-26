@@ -102,11 +102,11 @@ services:
   searxng:
     image: searxng/searxng:latest
     environment:
-      SEARXNG_BASE_URL: http://searxng:8888/
+      SEARXNG_BASE_URL: http://localhost:8888/
       SEARXNG_SECRET: ${SEARXNG_SECRET}
+      BIND_ADDRESS: 0.0.0.0:8888
     volumes:
-      - ./docker/searxng/settings.yml:/etc/searxng/settings.yml:ro
-      - searxng-data:/etc/searxng
+      - ./docker/searxng:/etc/searxng:rw
     networks:
       - research-network
     restart: unless-stopped
@@ -144,7 +144,6 @@ services:
 volumes:
   postgres-data:
   redis-data:
-  searxng-data:
 
 networks:
   research-network:
