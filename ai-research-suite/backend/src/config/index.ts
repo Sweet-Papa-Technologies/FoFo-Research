@@ -44,8 +44,10 @@ interface Config {
     secret?: string;
   };
   litellm: {
+    baseUrl?: string;
     apiKey?: string;
     defaultModel: string;
+    timeout?: number;
   };
   
   // Application settings
@@ -94,8 +96,10 @@ export const config: Config = {
   },
   
   litellm: {
+    baseUrl: process.env.LITELLM_BASE_URL,
     apiKey: process.env.LITELLM_API_KEY,
     defaultModel: process.env.LITELLM_DEFAULT_MODEL || 'gpt-3.5-turbo',
+    timeout: parseInt(process.env.LITELLM_TIMEOUT || '60000', 10),
   },
   
   app: {

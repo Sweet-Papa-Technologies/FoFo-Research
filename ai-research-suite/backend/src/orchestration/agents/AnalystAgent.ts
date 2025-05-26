@@ -3,6 +3,7 @@ import { AnalysisTool } from '../tools/AnalysisTool';
 import { FactCheckTool } from '../tools/FactCheckTool';
 import { RelevanceScoringTool } from '../tools/RelevanceScoringTool';
 import { logger } from '../../utils/logger';
+import { createLLMConfig } from './AgentConfig';
 
 export interface AnalystAgentConfig {
   name?: string;
@@ -25,12 +26,12 @@ export function createAnalystAgent(config: AnalystAgentConfig): Agent {
       new FactCheckTool(),
       new RelevanceScoringTool()
     ],
-    llm: {
+    llm: createLLMConfig({
       provider: config.llmConfig.provider,
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.3,
       maxTokens: config.llmConfig.maxTokens || 2000
-    },
+    }),
     verbose: true
   });
 }

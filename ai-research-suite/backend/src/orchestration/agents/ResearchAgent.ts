@@ -4,6 +4,7 @@ import { AnalysisTool } from '../tools/AnalysisTool';
 import { SummarizationTool } from '../tools/SummarizationTool';
 import { CitationTool } from '../tools/CitationTool';
 import { logger } from '../../utils/logger';
+import { createLLMConfig } from './AgentConfig';
 
 export interface ResearchAgentConfig {
   name?: string;
@@ -27,12 +28,12 @@ export function createResearchAgent(config: ResearchAgentConfig): Agent {
       new SummarizationTool(),
       new CitationTool()
     ],
-    llm: {
+    llm: createLLMConfig({
       provider: config.llmConfig.provider,
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.7,
       maxTokens: config.llmConfig.maxTokens || 2000
-    },
+    }),
     verbose: true
   });
 }

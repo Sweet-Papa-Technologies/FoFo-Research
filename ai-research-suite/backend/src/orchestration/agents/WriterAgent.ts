@@ -3,6 +3,7 @@ import { ReportFormatterTool } from '../tools/ReportFormatterTool';
 import { CitationTool } from '../tools/CitationTool';
 import { SummarizationTool } from '../tools/SummarizationTool';
 import { logger } from '../../utils/logger';
+import { createLLMConfig } from './AgentConfig';
 
 export interface WriterAgentConfig {
   name?: string;
@@ -25,12 +26,12 @@ export function createWriterAgent(config: WriterAgentConfig): Agent {
       new CitationTool(),
       new SummarizationTool()
     ],
-    llm: {
+    llm: createLLMConfig({
       provider: config.llmConfig.provider,
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.5,
       maxTokens: config.llmConfig.maxTokens || 4000
-    },
+    }),
     verbose: true
   });
 }

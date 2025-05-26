@@ -220,7 +220,7 @@ export class ResearchService {
         topic,
         parameters,
         llmConfig: {
-          provider: config.litellm.defaultModel.split('/')[0] || 'openai',
+          provider: this.extractProvider(config.litellm.defaultModel),
           model: config.litellm.defaultModel,
           apiKey: config.litellm.apiKey
         }
@@ -329,5 +329,22 @@ export class ResearchService {
       errorMessage: dbSession.error_message,
       reportId: dbSession.report_id
     };
+  }
+  
+  private extractProvider(model: string): string {
+    // Extract provider from model name patterns
+    if (model.startsWith('gpt')) return 'openai';
+    if (model.startsWith('claude')) return 'anthropic';
+    if (model.includes('llama')) return 'ollama';
+    if (model.includes('mistral')) return 'ollama';
+    if (model.includes('mixtral')) return 'ollama';
+    
+    // Check if using local endpoints
+    if (config.litellm.baseUrl?.includes('ollama')) return 'ollama';
+    if (config.litellm.baseUrl?.includes('localhost:1234')) return 'lmstudio';
+    if (config.litellm.baseUrl?.includes('localhost:4000')) return 'litellm-proxy';
+    
+    // Default to OpenAI-compatible
+    return 'openai';
   }
 }

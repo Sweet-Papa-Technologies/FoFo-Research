@@ -4,6 +4,7 @@ import { createAnalystAgent, AnalystAgentExecutor } from './agents/AnalystAgent'
 import { createWriterAgent, WriterAgentExecutor } from './agents/WriterAgent';
 import { logger } from '../utils/logger';
 import { emitProgressUpdate, emitSourceFound, emitStatusChange } from '../utils/websocket';
+import { LiteLLMService } from '../services/LiteLLMService';
 
 export interface WorkflowConfig {
   sessionId: string;
