@@ -43,7 +43,10 @@ export function validateQuery(schema: Joi.Schema) {
       return next(new ValidationError(message));
     }
     
-    req.query = value;
+    // Instead of reassigning req.query, merge the validated values
+    Object.keys(value).forEach(key => {
+      (req.query as any)[key] = value[key];
+    });
     next();
   };
 }
@@ -66,7 +69,10 @@ export function validateParams(schema: Joi.Schema) {
       return next(new ValidationError(message));
     }
     
-    req.params = value;
+    // Instead of reassigning req.params, merge the validated values
+    Object.keys(value).forEach(key => {
+      (req.params as any)[key] = value[key];
+    });
     next();
   };
 }

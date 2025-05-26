@@ -46,6 +46,45 @@ export class ReportController {
     }
   }
   
+  async getReportBySessionId(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { sessionId } = req.params;
+      const { format = 'json' } = req.query;
+      const userId = req.user?.id;
+      
+      logger.info(`Retrieving report for session ${sessionId} for user ${userId}`);
+      
+      // Get report with session info
+      const report = await this.db('reports')
+        .join('research_sessions', 'reports.session_id', 'research_sessions.id')
+        .where('reports.session_id', sessionId)
+        .where('research_sessions.user_id', userId)
+        .select(
+          'reports.*',
+          'research_sessions.topic',
+          'research_sessions.parameters',
+          'research_sessions.created_at as session_created_at'
+        )
+        .first();
+      
+      logger.info(`Query result for session ${sessionId}:`, report ? 'Found' : 'Not found');
+      
+      if (!report) {
+        throw new NotFoundError('Report not found for this session');
+      }
+      
+      // Format the report based on requested format
+      const formattedReport = this.formatReport(report, format as string);
+      
+      res.json({
+        success: true,
+        data: formattedReport
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+  
   async downloadReport(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { reportId } = req.params;

@@ -142,24 +142,52 @@ export class ResearchWorkflow {
   }
   
   private processResults(result: any): any {
-    // Extract results from the team execution
-    const taskResults = result.tasks || [];
+    // KaibanJS returns the final output directly as a string
+    let content = '';
+    let reportOutput = '';
+    
+    if (typeof result === 'string') {
+      // Direct string output from the workflow
+      content = result;
+      reportOutput = result;
+    } else if (result && typeof result === 'object') {
+      // Check various possible locations for the output
+      if (result.output) {
+        content = result.output;
+        reportOutput = result.output;
+      } else if (result.result) {
+        content = result.result;
+        reportOutput = result.result;
+      } else if (result.tasks && Array.isArray(result.tasks)) {
+        // Legacy format with task array
+        const taskResults = result.tasks;
+        reportOutput = taskResults[2]?.output || taskResults[taskResults.length - 1]?.output || '';
+        content = reportOutput;
+      }
+    }
+    
+    // Clean up markdown code blocks if present
+    if (content.startsWith('```markdown') && content.endsWith('```')) {
+      content = content.slice(11, -3).trim();
+    } else if (content.startsWith('```') && content.endsWith('```')) {
+      content = content.slice(3, -3).trim();
+    }
     
     return {
-      content: taskResults[2]?.output || '', // Writing task output
-      summary: this.extractSummary(taskResults[2]?.output),
-      keyFindings: this.extractKeyFindings(taskResults[1]?.output),
-      sources: this.extractSources(taskResults[0]?.output),
-      citations: this.extractCitations(taskResults[2]?.output),
+      content: content,
+      summary: this.extractSummary(content),
+      keyFindings: this.extractKeyFindings(content),
+      sources: this.extractSources(content),
+      citations: this.extractCitations(content),
       metadata: {
         topic: this.config.topic,
         generatedAt: new Date().toISOString(),
         parameters: this.config.parameters,
         statistics: {
-          totalSources: 0,
+          totalSources: this.extractSources(content).length,
           analyzedSources: 0,
           searchQueries: 0,
-          processingTime: Date.now() - parseInt(this.config.sessionId.split('-')[0])
+          processingTime: Date.now() - new Date().getTime()
         }
       }
     };
@@ -189,52 +217,126 @@ export class ResearchWorkflow {
   }
   
   private extractSummary(report: any): string {
+    if (!report) return '';
+    
     if (typeof report === 'string') {
-      const summaryMatch = report.match(/## Executive Summary\n\n([^#]+)/);
-      return summaryMatch ? summaryMatch[1].trim() : '';
+      // Try to extract Executive Summary section
+      const summaryMatch = report.match(/##\s*Executive Summary\s*\n+([^#]+)/i);
+      if (summaryMatch) {
+        return summaryMatch[1].trim();
+      }
+      
+      // If no executive summary, try to get the first paragraph after the title
+      const lines = report.split('\n').filter(line => line.trim());
+      let foundTitle = false;
+      let summary = '';
+      
+      for (const line of lines) {
+        if (line.startsWith('#') && !line.startsWith('##')) {
+          foundTitle = true;
+          continue;
+        }
+        if (foundTitle && line.trim() && !line.startsWith('#')) {
+          summary = line.trim();
+          break;
+        }
+      }
+      
+      return summary || 'No summary available';
     }
+    
     return report.summary || '';
   }
   
-  private extractKeyFindings(analysisResults: any): string[] {
-    if (analysisResults.keyFindings) {
-      return analysisResults.keyFindings;
+  private extractKeyFindings(report: any): string[] {
+    if (!report) return [];
+    
+    if (typeof report === 'string') {
+      const findings: string[] = [];
+      
+      // Look for Key Findings section
+      const keyFindingsMatch = report.match(/##\s*Key Findings\s*\n+([^#]+)/i);
+      if (keyFindingsMatch) {
+        const findingsText = keyFindingsMatch[1].trim();
+        
+        // Extract each finding (usually starts with ###)
+        const findingMatches = findingsText.match(/###\s*([^\n]+)/g);
+        if (findingMatches) {
+          findingMatches.forEach(match => {
+            findings.push(match.replace(/^###\s*/, '').trim());
+          });
+        }
+        
+        // If no ### headers, try bullet points
+        if (findings.length === 0) {
+          const bulletMatches = findingsText.match(/[-*]\s*([^\n]+)/g);
+          if (bulletMatches) {
+            bulletMatches.forEach(match => {
+              findings.push(match.replace(/^[-*]\s*/, '').trim());
+            });
+          }
+        }
+      }
+      
+      return findings;
     }
     
-    const findings = [];
-    
-    if (analysisResults.themes) {
-      findings.push(`Key themes identified: ${analysisResults.themes.join(', ')}`);
+    // Handle structured data
+    if (report.keyFindings) {
+      return Array.isArray(report.keyFindings) 
+        ? report.keyFindings 
+        : [report.keyFindings];
     }
     
-    if (analysisResults.insights) {
-      findings.push(...analysisResults.insights);
-    }
-    
-    return findings;
+    return [];
   }
   
   private extractCitations(report: any): any[] {
+    if (!report) return [];
+    
+    if (typeof report === 'string') {
+      const citations: Array<{ id: string; text: string; url?: string }> = [];
+      
+      // Look for References section
+      const referencesMatch = report.match(/##\s*References\s*\n+([^#]+)$/i);
+      if (referencesMatch) {
+        const referencesText = referencesMatch[1].trim();
+        
+        // Match numbered references like [1] Author et al. (2024)
+        const numberedRefs = referencesText.match(/\[(\d+)\]\s*([^\n]+)/g);
+        if (numberedRefs) {
+          numberedRefs.forEach(ref => {
+            const match = ref.match(/\[(\d+)\]\s*(.+)/);
+            if (match) {
+              citations.push({
+                id: `cite-${match[1]}`,
+                text: match[2].trim()
+              });
+            }
+          });
+        }
+      }
+      
+      // Also look for inline citations with links
+      const inlineCitations = report.match(/\[([^\]]+)\]\(([^)]+)\)/g) || [];
+      inlineCitations.forEach((match: string, index: number) => {
+        const parts = match.match(/\[([^\]]+)\]\(([^)]+)\)/);
+        if (parts && parts[2].startsWith('http')) {
+          citations.push({
+            id: `cite-inline-${index + 1}`,
+            text: parts[1],
+            url: parts[2]
+          });
+        }
+      });
+      
+      return citations;
+    }
+    
     if (report.citations) {
       return report.citations;
     }
     
-    const reportText = typeof report === 'string' ? report : report.content || '';
-    const citations: Array<{ id: string; text: string; url: string }> = [];
-    
-    const citationMatches = reportText.match(/\[([^\]]+)\]\(([^)]+)\)/g) || [];
-    
-    citationMatches.forEach((match: string, index: number) => {
-      const parts = match.match(/\[([^\]]+)\]\(([^)]+)\)/);
-      if (parts) {
-        citations.push({
-          id: `cite-${index + 1}`,
-          text: parts[1],
-          url: parts[2]
-        });
-      }
-    });
-    
-    return citations;
+    return [];
   }
 }

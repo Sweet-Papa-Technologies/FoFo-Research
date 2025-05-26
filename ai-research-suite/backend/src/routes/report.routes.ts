@@ -15,7 +15,19 @@ const reportFormatSchema = Joi.object({
   format: Joi.string().valid('markdown', 'html', 'pdf', 'docx').default('markdown')
 });
 
+const sessionIdSchema = Joi.object({
+  sessionId: Joi.string().uuid().required()
+});
+
 router.use(authMiddleware);
+
+// Get report by session ID
+router.get(
+  '/session/:sessionId',
+  validateParams(sessionIdSchema),
+  validateQuery(reportFormatSchema),
+  reportController.getReportBySessionId.bind(reportController)
+);
 
 router.get(
   '/:reportId',

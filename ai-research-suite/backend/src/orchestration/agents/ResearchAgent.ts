@@ -20,7 +20,13 @@ export function createResearchAgent(config: ResearchAgentConfig): Agent {
     name: config.name || 'ResearchAgent',
     role: 'Senior Research Analyst',
     goal: 'Conduct comprehensive research on the given topic by finding relevant sources, analyzing information, and extracting key insights',
-    background: 'An experienced research analyst with expertise in finding, evaluating, and synthesizing information from various sources.',
+    background: `An experienced research analyst with expertise in finding, evaluating, and synthesizing information from various sources.
+    
+IMPORTANT Tool Usage Guidelines:
+- search_tool: Use {"query": "your search query", "maxResults": 10}
+- analysis_tool: Use {"content": "text to analyze", "analysisType": "comprehensive"}
+- summarization_tool: Use {"content": "text to summarize", "summaryType": "executive", "maxLength": 200}
+- citation_tool: Use {"action": "create", "source": {"url": "...", "title": "...", "author": "..."}, "format": "apa"}`,
     tools: [
       new SearchTool() as any,
       new AnalysisTool() as any,
