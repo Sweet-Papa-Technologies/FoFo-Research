@@ -11,14 +11,21 @@ interface Config {
   
   // Database
   database: {
-    url: string;
+    url?: string;
+    host: string;
+    port: number;
+    user: string;
+    password: string;
+    name: string;
     poolMin: number;
     poolMax: number;
   };
   
   // Redis
   redis: {
-    url: string;
+    url?: string;
+    host: string;
+    port: number;
     password?: string;
   };
   
@@ -55,13 +62,20 @@ export const config: Config = {
   frontendUrl: process.env.FRONTEND_URL || 'http://localhost:9000',
   
   database: {
-    url: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/research_suite',
+    url: process.env.DATABASE_URL,
+    host: process.env.DB_HOST || 'localhost',
+    port: parseInt(process.env.DB_PORT || '5432', 10),
+    user: process.env.DB_USER || 'postgres',
+    password: process.env.DB_PASSWORD || 'password',
+    name: process.env.DB_NAME || 'research_suite',
     poolMin: parseInt(process.env.DB_POOL_MIN || '2', 10),
     poolMax: parseInt(process.env.DB_POOL_MAX || '10', 10),
   },
   
   redis: {
-    url: process.env.REDIS_URL || 'redis://localhost:6379',
+    url: process.env.REDIS_URL,
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
     password: process.env.REDIS_PASSWORD,
   },
   

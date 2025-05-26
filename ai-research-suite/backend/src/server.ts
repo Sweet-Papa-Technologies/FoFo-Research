@@ -11,6 +11,7 @@ import { setupRoutes } from './routes';
 import { setupWebSockets } from './utils/websocket';
 import { initializeDatabase } from './utils/database';
 import { initializeQueues } from './utils/queues';
+import { startResearchWorker } from './workers/researchWorker';
 
 class APIServer {
   private app: express.Application;
@@ -91,6 +92,10 @@ class APIServer {
       // Initialize queues
       await initializeQueues();
       logger.info('Queues initialized');
+      
+      // Start research worker
+      await startResearchWorker();
+      logger.info('Research worker started');
       
       // Start server
       this.server.listen(this.port, () => {
