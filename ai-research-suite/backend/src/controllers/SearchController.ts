@@ -4,10 +4,10 @@ import { logger } from '../utils/logger';
 export class SearchController {
   async search(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { query, maxResults, filters } = req.body;
-      const userId = req.user?.id;
+      const { query, maxResults: _maxResults, filters: _filters } = req.body;
+      // const _userId = req.user?.id;
       
-      logger.info(`Performing search for user ${userId}: ${query}`);
+      logger.info(`Performing search: ${query}`);
       
       // TODO: Implement search functionality
       res.json({
@@ -23,9 +23,9 @@ export class SearchController {
     }
   }
   
-  async getSearchHistory(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getSearchHistory(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user?.id;
+      // const _userId = req.user?.id;
       
       // TODO: Implement search history retrieval
       res.json({

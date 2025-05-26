@@ -48,7 +48,7 @@ export class LiteLLMService {
     return headers;
   }
   
-  async complete(prompt: string, options: CompletionOptions = {}): Promise<string> {
+  async complete(prompt: string, options: Partial<CompletionOptions> = {}): Promise<string> {
     const model = options.model || this.defaultModel;
     
     try {
@@ -116,7 +116,7 @@ export class LiteLLMService {
   async streamComplete(
     prompt: string,
     onChunk: (chunk: string) => void,
-    options: CompletionOptions = {}
+    options: Partial<CompletionOptions> = {}
   ): Promise<void> {
     const model = options.model || this.defaultModel;
     

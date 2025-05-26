@@ -53,7 +53,7 @@ class APIServer {
     this.app.use(express.urlencoded({ extended: true }));
     
     // Request logging
-    this.app.use((req, res, next) => {
+    this.app.use((req, _res, next) => {
       logger.info(`${req.method} ${req.path}`, {
         ip: req.ip,
         userAgent: req.get('user-agent')
@@ -66,12 +66,12 @@ class APIServer {
     setupRoutes(this.app);
     
     // Health check endpoint
-    this.app.get('/health', (req, res) => {
+    this.app.get('/health', (_req, res) => {
       res.json({ status: 'healthy', timestamp: new Date().toISOString() });
     });
     
     // 404 handler
-    this.app.use((req, res) => {
+    this.app.use((_req, res) => {
       res.status(404).json({ error: 'Not found' });
     });
     

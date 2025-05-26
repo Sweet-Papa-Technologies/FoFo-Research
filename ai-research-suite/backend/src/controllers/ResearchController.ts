@@ -20,7 +20,7 @@ export class ResearchController {
       const session = await this.researchService.startResearch({
         topic,
         parameters,
-        userId
+        userId: userId || ''
       });
       
       res.status(201).json({
@@ -42,7 +42,7 @@ export class ResearchController {
       const { status, page = 1, limit = 20 } = req.query;
       
       const sessions = await this.researchService.listUserSessions(
-        userId,
+        userId || '',
         {
           status: status as string,
           page: Number(page),
@@ -64,7 +64,7 @@ export class ResearchController {
       const { sessionId } = req.params;
       const userId = req.user?.id;
       
-      const session = await this.researchService.getSession(sessionId, userId);
+      const session = await this.researchService.getSession(sessionId, userId || '');
       
       if (!session) {
         throw new AppError(404, 'Research session not found');
@@ -84,7 +84,7 @@ export class ResearchController {
       const { sessionId } = req.params;
       const userId = req.user?.id;
       
-      await this.researchService.cancelResearch(sessionId, userId);
+      await this.researchService.cancelResearch(sessionId, userId || '');
       
       res.status(204).send();
     } catch (error) {
@@ -97,7 +97,7 @@ export class ResearchController {
       const { sessionId } = req.params;
       const userId = req.user?.id;
       
-      const progress = await this.researchService.getProgress(sessionId, userId);
+      const progress = await this.researchService.getProgress(sessionId, userId || '');
       
       res.json({
         success: true,
@@ -113,7 +113,7 @@ export class ResearchController {
       const { sessionId } = req.params;
       const userId = req.user?.id;
       
-      const newSession = await this.researchService.retryResearch(sessionId, userId);
+      const newSession = await this.researchService.retryResearch(sessionId, userId || '');
       
       res.json({
         success: true,

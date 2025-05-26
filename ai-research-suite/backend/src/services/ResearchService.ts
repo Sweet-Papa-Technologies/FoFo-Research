@@ -182,7 +182,7 @@ export class ResearchService {
         status: session.status,
         jobState: state,
         progress: typeof progress === 'number' ? progress : 0,
-        currentPhase: job.data?.currentPhase || 'initializing',
+        currentPhase: (job.data as any)?.currentPhase || 'initializing',
         estimatedTimeRemaining: job.opts?.delay ? job.opts.delay / 1000 : null
       };
     } catch (error) {
@@ -210,7 +210,7 @@ export class ResearchService {
   }
   
   async processResearchJob(job: any): Promise<void> {
-    const { sessionId, topic, parameters, userId } = job.data;
+    const { sessionId, topic, parameters } = job.data;
     
     try {
       await this.updateSessionStatus(sessionId, 'processing', { startedAt: new Date() });
@@ -240,7 +240,7 @@ export class ResearchService {
       logger.error(`Research session ${sessionId} failed:`, error);
       
       await this.updateSessionStatus(sessionId, 'failed', {
-        errorMessage: error.message
+        errorMessage: error instanceof Error ? error.message : 'Unknown error'
       });
       
       throw error;

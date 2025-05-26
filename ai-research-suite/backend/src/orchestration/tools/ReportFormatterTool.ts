@@ -258,7 +258,7 @@ export class ReportFormatterTool extends StructuredTool<typeof reportFormatterTo
     return html;
   }
   
-  private formatAsPlainText(content: any, style: string, options: any): string {
+  private formatAsPlainText(content: any, _style: string, options: any): string {
     let text = '';
     
     if (content.title) {

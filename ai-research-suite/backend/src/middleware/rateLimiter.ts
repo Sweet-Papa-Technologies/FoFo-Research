@@ -33,7 +33,7 @@ export function rateLimiter(type: string, options: RateLimitOptions = {}) {
     }
   };
   
-  const typeDefaults = defaults[type] || defaults.general;
+  const typeDefaults = defaults[type as keyof typeof defaults] || defaults.general;
   
   return rateLimit({
     max: options.max || typeDefaults.max,
@@ -43,7 +43,7 @@ export function rateLimiter(type: string, options: RateLimitOptions = {}) {
     standardHeaders: true,
     legacyHeaders: false,
     
-    handler: (req, res, next) => {
+    handler: (_req, _res, next) => {
       next(new RateLimitError(options.message || typeDefaults.message));
     },
     

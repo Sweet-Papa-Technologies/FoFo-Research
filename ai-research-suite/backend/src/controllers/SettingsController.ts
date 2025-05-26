@@ -3,9 +3,9 @@ import { logger } from '../utils/logger';
 import { config } from '../config';
 
 export class SettingsController {
-  async getUserSettings(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getUserSettings(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user?.id;
+      // const _userId = req.user?.id;
       
       // TODO: Fetch user-specific settings
       
@@ -26,10 +26,10 @@ export class SettingsController {
   
   async updateUserSettings(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const userId = req.user?.id;
+      // const _userId = req.user?.id;
       const settings = req.body;
       
-      logger.info(`Updating settings for user ${userId}`);
+      logger.info('Updating user settings');
       
       // TODO: Update user settings in database
       
@@ -45,7 +45,7 @@ export class SettingsController {
     }
   }
   
-  async getSystemSettings(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getSystemSettings(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // TODO: Check if user has admin role
       
@@ -63,7 +63,7 @@ export class SettingsController {
     }
   }
   
-  async updateSystemSettings(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async updateSystemSettings(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // TODO: Check if user has admin role
       // TODO: Update system settings
@@ -79,7 +79,7 @@ export class SettingsController {
     }
   }
   
-  async getAvailableModels(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getAvailableModels(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // TODO: Fetch available LLM models
       
@@ -99,7 +99,7 @@ export class SettingsController {
     }
   }
   
-  async getSearchEngines(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getSearchEngines(_req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       // TODO: Fetch configured search engines
       

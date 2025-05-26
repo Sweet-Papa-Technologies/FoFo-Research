@@ -1,14 +1,12 @@
 import { Request, Response, NextFunction } from 'express';
-import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { config } from '../config';
 import { logger } from '../utils/logger';
-import { ValidationError, UnauthorizedError } from '../middleware/errorHandler';
 
 export class AuthController {
   async register(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { email, password, name } = req.body;
+      const { email, password: _password, name: _name } = req.body;
       
       // TODO: Check if user already exists
       // TODO: Hash password and create user
@@ -28,15 +26,15 @@ export class AuthController {
   
   async login(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { email, password } = req.body;
+      const { email, password: _password } = req.body;
       
       // TODO: Verify user credentials
       // TODO: Generate tokens
       
       const accessToken = jwt.sign(
         { sub: 'user-id', email, role: 'user' },
-        config.jwt.secret,
-        { expiresIn: config.jwt.expiresIn }
+        config.jwt.secret as jwt.Secret,
+        { expiresIn: config.jwt.expiresIn } as jwt.SignOptions
       );
       
       res.json({
@@ -54,7 +52,7 @@ export class AuthController {
   
   async refresh(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { refreshToken } = req.body;
+      const { refreshToken: _refreshToken } = req.body;
       
       // TODO: Validate refresh token and generate new access token
       
@@ -110,7 +108,7 @@ export class AuthController {
   
   async changePassword(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { currentPassword, newPassword } = req.body;
+      const { currentPassword: _currentPassword, newPassword: _newPassword } = req.body;
       const userId = req.user?.id;
       
       // TODO: Verify current password and update to new password

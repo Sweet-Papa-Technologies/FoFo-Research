@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
-import { NotFoundError } from '../middleware/errorHandler';
 
 export class ReportController {
   async getReport(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -28,7 +27,7 @@ export class ReportController {
   async downloadReport(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
       const { reportId } = req.params;
-      const { format } = req.query;
+      const { format: _format } = req.query;
       
       // TODO: Implement report download
       res.setHeader('Content-Type', 'text/markdown');
@@ -41,7 +40,7 @@ export class ReportController {
   
   async getReportSources(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { reportId } = req.params;
+      const { reportId: _reportId } = req.params;
       
       // TODO: Implement sources retrieval
       res.json({
@@ -57,7 +56,7 @@ export class ReportController {
   
   async getReportCitations(req: Request, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { reportId } = req.params;
+      const { reportId: _reportId } = req.params;
       
       // TODO: Implement citations retrieval
       res.json({

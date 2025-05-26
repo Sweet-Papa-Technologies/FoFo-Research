@@ -12,7 +12,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export function authMiddleware(req: AuthRequest, res: Response, next: NextFunction): void {
+export function authMiddleware(req: AuthRequest, _res: Response, next: NextFunction): void {
   try {
     const token = extractToken(req);
     
@@ -40,7 +40,7 @@ export function authMiddleware(req: AuthRequest, res: Response, next: NextFuncti
   }
 }
 
-export function optionalAuthMiddleware(req: AuthRequest, res: Response, next: NextFunction): void {
+export function optionalAuthMiddleware(req: AuthRequest, _res: Response, next: NextFunction): void {
   try {
     const token = extractToken(req);
     
@@ -54,14 +54,14 @@ export function optionalAuthMiddleware(req: AuthRequest, res: Response, next: Ne
     }
     
     next();
-  } catch (error) {
+  } catch (error:any) {
     logger.warn('Optional auth failed:', error.message);
     next();
   }
 }
 
 export function requireRole(...roles: string[]) {
-  return (req: AuthRequest, res: Response, next: NextFunction): void => {
+  return (req: AuthRequest, _res: Response, next: NextFunction): void => {
     if (!req.user) {
       return next(new UnauthorizedError('Authentication required'));
     }
