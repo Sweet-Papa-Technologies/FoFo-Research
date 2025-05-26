@@ -1,53 +1,42 @@
-import { Tool } from 'kaiban';
+import { StructuredTool } from '@langchain/core/tools';
+import { z } from 'zod';
 import { logger } from '../../utils/logger';
 import { v4 as uuidv4 } from 'uuid';
 
-export class CitationTool extends Tool {
-  constructor() {
-    super({
-      name: 'citation_tool',
-      description: 'Manage citations and references for research sources',
-      parameters: {
-        type: 'object',
-        properties: {
-          action: {
-            type: 'string',
-            description: 'The citation action to perform',
-            enum: ['create', 'format', 'extract', 'validate'],
-            default: 'create'
-          },
-          source: {
-            type: 'object',
-            description: 'Source information for citation',
-            properties: {
-              url: { type: 'string' },
-              title: { type: 'string' },
-              author: { type: 'string' },
-              publishedDate: { type: 'string' },
-              accessedDate: { type: 'string' },
-              content: { type: 'string' }
-            }
-          },
-          format: {
-            type: 'string',
-            description: 'Citation format',
-            enum: ['apa', 'mla', 'chicago', 'harvard', 'markdown'],
-            default: 'markdown'
-          },
-          text: {
-            type: 'string',
-            description: 'Text containing citations to extract or validate'
-          }
-        },
-        required: ['action']
-      },
-      execute: async (params: any) => {
-        return this.handleCitation(params);
-      }
-    });
+const citationToolSchema = z.object({
+  action: z.enum(['create', 'format', 'extract', 'validate'])
+    .default('create')
+    .describe('The citation action to perform'),
+  source: z.object({
+    url: z.string().optional(),
+    title: z.string().optional(),
+    author: z.string().optional(),
+    publishedDate: z.string().optional(),
+    accessedDate: z.string().optional(),
+    content: z.string().optional()
+  })
+    .optional()
+    .describe('Source information for citation'),
+  format: z.enum(['apa', 'mla', 'chicago', 'harvard', 'markdown'])
+    .optional()
+    .default('markdown')
+    .describe('Citation format'),
+  text: z.string()
+    .optional()
+    .describe('Text containing citations to extract or validate')
+});
+
+export class CitationTool extends StructuredTool<typeof citationToolSchema> {
+  name = 'citation_tool';
+  description = 'Manage citations and references for research sources';
+  schema = citationToolSchema;
+
+  async _call(input: z.infer<typeof citationToolSchema>): Promise<string> {
+    const result = await this.handleCitation(input);
+    return JSON.stringify(result);
   }
 
-  private async handleCitation(params: any): Promise<any> {
+  private async handleCitation(params: z.infer<typeof citationToolSchema>): Promise<any> {
     const { action, source, format = 'markdown', text } = params;
     
     try {
@@ -55,23 +44,23 @@ export class CitationTool extends Tool {
       
       switch (action) {
         case 'create':
-          return this.createCitation(source, format);
+          return this.createCitation(source || {}, format);
           
         case 'format':
-          return this.formatCitation(source, format);
+          return this.formatCitation(source || {}, format);
           
         case 'extract':
-          return this.extractCitations(text);
+          return this.extractCitations(text || '');
           
         case 'validate':
-          return this.validateCitations(text);
+          return this.validateCitations(text || '');
           
         default:
           throw new Error(`Unknown citation action: ${action}`);
       }
     } catch (error) {
       logger.error('Citation tool error:', error);
-      throw new Error(`Citation operation failed: ${error.message}`);
+      throw new Error(`Citation operation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
@@ -206,9 +195,9 @@ export class CitationTool extends Tool {
     const extracted = this.extractCitations(text);
     const validation = {
       totalCitations: extracted.totalCitations,
-      valid: [],
-      invalid: [],
-      warnings: []
+      valid: [] as any[],
+      invalid: [] as any[],
+      warnings: [] as any[]
     };
     
     extracted.citations.forEach((citation: any) => {

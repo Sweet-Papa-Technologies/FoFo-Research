@@ -1,63 +1,46 @@
-import { Tool } from 'kaiban';
+import { StructuredTool } from '@langchain/core/tools';
+import { z } from 'zod';
 import { logger } from '../../utils/logger';
 
-export class RelevanceScoringTool extends Tool {
-  constructor() {
-    super({
-      name: 'relevance_scoring_tool',
-      description: 'Score the relevance of content against a research topic or query',
-      parameters: {
-        type: 'object',
-        properties: {
-          topic: {
-            type: 'string',
-            description: 'The research topic or query'
-          },
-          content: {
-            type: 'string',
-            description: 'The content to score for relevance'
-          },
-          criteria: {
-            type: 'object',
-            description: 'Specific criteria for relevance scoring',
-            properties: {
-              keywords: {
-                type: 'array',
-                items: { type: 'string' },
-                description: 'Important keywords that should be present'
-              },
-              requiredConcepts: {
-                type: 'array',
-                items: { type: 'string' },
-                description: 'Concepts that must be covered'
-              },
-              excludeTerms: {
-                type: 'array',
-                items: { type: 'string' },
-                description: 'Terms that reduce relevance if present'
-              }
-            }
-          },
-          metadata: {
-            type: 'object',
-            description: 'Additional metadata about the content',
-            properties: {
-              source: { type: 'string' },
-              publishDate: { type: 'string' },
-              author: { type: 'string' },
-              domain: { type: 'string' }
-            }
-          }
-        },
-        required: ['topic', 'content']
-      },
-      execute: async (params: any) => {
-        return this.scoreRelevance(params);
-      }
-    });
+const relevanceScoringToolSchema = z.object({
+  topic: z.string().describe('The research topic or query'),
+  content: z.string().describe('The content to score for relevance'),
+  criteria: z.object({
+    keywords: z.array(z.string())
+      .optional()
+      .describe('Important keywords that should be present'),
+    requiredConcepts: z.array(z.string())
+      .optional()
+      .describe('Concepts that must be covered'),
+    excludeTerms: z.array(z.string())
+      .optional()
+      .describe('Terms that reduce relevance if present')
+  })
+    .optional()
+    .default({})
+    .describe('Specific criteria for relevance scoring'),
+  metadata: z.object({
+    source: z.string().optional(),
+    publishDate: z.string().optional(),
+    author: z.string().optional(),
+    domain: z.string().optional()
+  })
+    .optional()
+    .default({})
+    .describe('Additional metadata about the content')
+});
+
+export class RelevanceScoringTool extends StructuredTool<typeof relevanceScoringToolSchema> {
+  name = 'relevance_scoring_tool';
+  description = 'Score the relevance of content against a research topic or query';
+  schema = relevanceScoringToolSchema;
+
+  async _call(input: z.infer<typeof relevanceScoringToolSchema>): Promise<string> {
+    const result = await this.scoreRelevance(input);
+    return JSON.stringify(result);
   }
 
-  private async scoreRelevance(params: any): Promise<any> {
+  private async scoreRelevance(params: z.infer<typeof relevanceScoringToolSchema>): Promise<any> {
     const { topic, content, criteria = {}, metadata = {} } = params;
     
     try {
@@ -76,11 +59,11 @@ export class RelevanceScoringTool extends Tool {
           freshness: 0
         },
         analysis: {
-          matchedKeywords: [],
-          coveredConcepts: [],
-          excludedTermsFound: [],
-          strengths: [],
-          weaknesses: []
+          matchedKeywords: [] as string[],
+          coveredConcepts: [] as string[],
+          excludedTermsFound: [] as string[],
+          strengths: [] as string[],
+          weaknesses: [] as string[]
         },
         recommendation: ''
       };
@@ -90,18 +73,18 @@ export class RelevanceScoringTool extends Tool {
       if (criteria.keywords) {
         const keywordResult = this.scoreKeywordMatch(content, criteria.keywords);
         scoring.scores.keywordMatch = keywordResult.score;
-        scoring.analysis.matchedKeywords = keywordResult.matched;
+        scoring.analysis.matchedKeywords = keywordResult.matched as string[];
       }
       
       if (criteria.requiredConcepts) {
         const conceptResult = this.scoreConceptCoverage(content, criteria.requiredConcepts);
         scoring.scores.conceptCoverage = conceptResult.score;
-        scoring.analysis.coveredConcepts = conceptResult.covered;
+        scoring.analysis.coveredConcepts = conceptResult.covered as string[];
       }
       
       if (criteria.excludeTerms) {
         const excludeResult = this.checkExcludedTerms(content, criteria.excludeTerms);
-        scoring.analysis.excludedTermsFound = excludeResult.found;
+        scoring.analysis.excludedTermsFound = excludeResult.found as string[];
         if (excludeResult.found.length > 0) {
           scoring.scores.topicRelevance *= 0.8;
         }
@@ -127,7 +110,7 @@ export class RelevanceScoringTool extends Tool {
       return scoring;
     } catch (error) {
       logger.error('Relevance scoring error:', error);
-      throw new Error(`Relevance scoring failed: ${error.message}`);
+      throw new Error(`Relevance scoring failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
@@ -155,7 +138,7 @@ export class RelevanceScoringTool extends Tool {
   
   private scoreKeywordMatch(content: string, keywords: string[]): any {
     const contentLower = content.toLowerCase();
-    const matched = [];
+    const matched: any[] = [];
     let totalScore = 0;
     
     keywords.forEach(keyword => {
@@ -180,7 +163,7 @@ export class RelevanceScoringTool extends Tool {
   
   private scoreConceptCoverage(content: string, concepts: string[]): any {
     const contentLower = content.toLowerCase();
-    const covered = [];
+    const covered: string[] = [];
     let totalScore = 0;
     
     concepts.forEach(concept => {
@@ -207,7 +190,7 @@ export class RelevanceScoringTool extends Tool {
   
   private checkExcludedTerms(content: string, excludeTerms: string[]): any {
     const contentLower = content.toLowerCase();
-    const found = [];
+    const found: string[] = [];
     
     excludeTerms.forEach(term => {
       if (contentLower.includes(term.toLowerCase())) {

@@ -1,58 +1,46 @@
-import { Tool } from 'kaiban';
+import { StructuredTool } from '@langchain/core/tools';
+import { z } from 'zod';
 import { logger } from '../../utils/logger';
 
-export class ReportFormatterTool extends Tool {
-  constructor() {
-    super({
-      name: 'report_formatter_tool',
-      description: 'Format research reports in various styles and structures',
-      parameters: {
-        type: 'object',
-        properties: {
-          content: {
-            type: 'object',
-            description: 'The report content to format',
-            properties: {
-              title: { type: 'string' },
-              summary: { type: 'string' },
-              sections: { type: 'array' },
-              findings: { type: 'array' },
-              citations: { type: 'array' },
-              metadata: { type: 'object' }
-            }
-          },
-          format: {
-            type: 'string',
-            description: 'Output format',
-            enum: ['markdown', 'html', 'plain', 'structured'],
-            default: 'markdown'
-          },
-          style: {
-            type: 'string',
-            description: 'Report style',
-            enum: ['academic', 'business', 'technical', 'executive'],
-            default: 'business'
-          },
-          options: {
-            type: 'object',
-            description: 'Formatting options',
-            properties: {
-              includeToc: { type: 'boolean', default: true },
-              includeMetadata: { type: 'boolean', default: true },
-              includePageBreaks: { type: 'boolean', default: false },
-              citationStyle: { type: 'string', default: 'numbered' }
-            }
-          }
-        },
-        required: ['content']
-      },
-      execute: async (params: any) => {
-        return this.formatReport(params);
-      }
-    });
+const reportFormatterToolSchema = z.object({
+  content: z.object({
+    title: z.string().optional(),
+    summary: z.string().optional(),
+    sections: z.array(z.any()).optional(),
+    findings: z.array(z.any()).optional(),
+    citations: z.array(z.any()).optional(),
+    metadata: z.any().optional()
+  }).describe('The report content to format'),
+  format: z.enum(['markdown', 'html', 'plain', 'structured'])
+    .optional()
+    .default('markdown')
+    .describe('Output format'),
+  style: z.enum(['academic', 'business', 'technical', 'executive'])
+    .optional()
+    .default('business')
+    .describe('Report style'),
+  options: z.object({
+    includeToc: z.boolean().optional().default(true),
+    includeMetadata: z.boolean().optional().default(true),
+    includePageBreaks: z.boolean().optional().default(false),
+    citationStyle: z.string().optional().default('numbered')
+  })
+    .optional()
+    .default({})
+    .describe('Formatting options')
+});
+
+export class ReportFormatterTool extends StructuredTool<typeof reportFormatterToolSchema> {
+  name = 'report_formatter_tool';
+  description = 'Format research reports in various styles and structures';
+  schema = reportFormatterToolSchema;
+
+  async _call(input: z.infer<typeof reportFormatterToolSchema>): Promise<string> {
+    const result = await this.formatReport(input);
+    return JSON.stringify(result);
   }
 
-  private async formatReport(params: any): Promise<any> {
+  private async formatReport(params: z.infer<typeof reportFormatterToolSchema>): Promise<any> {
     const { content, format = 'markdown', style = 'business', options = {} } = params;
     
     try {
@@ -99,7 +87,7 @@ export class ReportFormatterTool extends Tool {
       };
     } catch (error) {
       logger.error('Report formatting error:', error);
-      throw new Error(`Report formatting failed: ${error.message}`);
+      throw new Error(`Report formatting failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
@@ -376,7 +364,7 @@ export class ReportFormatterTool extends Tool {
       executive: '.summary { font-size: 1.1em; }'
     };
     
-    return baseStyles + (styleSpecific[style] || '') + '</style>\n';
+    return baseStyles + ((styleSpecific as any)[style] || '') + '</style>\n';
   }
   
   private formatMetadataHTML(metadata: any): string {

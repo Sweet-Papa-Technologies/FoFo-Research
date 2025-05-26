@@ -1,44 +1,34 @@
-import { Tool } from 'kaiban';
+import { StructuredTool } from '@langchain/core/tools';
+import { z } from 'zod';
 import { logger } from '../../utils/logger';
 
-export class FactCheckTool extends Tool {
-  constructor() {
-    super({
-      name: 'fact_check_tool',
-      description: 'Verify facts and claims by cross-referencing multiple sources',
-      parameters: {
-        type: 'object',
-        properties: {
-          claim: {
-            type: 'string',
-            description: 'The claim or fact to verify'
-          },
-          sources: {
-            type: 'array',
-            items: {
-              type: 'object',
-              properties: {
-                url: { type: 'string' },
-                content: { type: 'string' },
-                credibility: { type: 'number' }
-              }
-            },
-            description: 'Sources to cross-reference for verification'
-          },
-          context: {
-            type: 'string',
-            description: 'Additional context for the claim'
-          }
-        },
-        required: ['claim']
-      },
-      execute: async (params: any) => {
-        return this.verifyFact(params);
-      }
-    });
+const factCheckToolSchema = z.object({
+  claim: z.string().describe('The claim or fact to verify'),
+  sources: z.array(z.object({
+    url: z.string().optional(),
+    content: z.string().optional(),
+    credibility: z.number().optional()
+  }))
+    .optional()
+    .default([])
+    .describe('Sources to cross-reference for verification'),
+  context: z.string()
+    .optional()
+    .default('')
+    .describe('Additional context for the claim')
+});
+
+export class FactCheckTool extends StructuredTool<typeof factCheckToolSchema> {
+  name = 'fact_check_tool';
+  description = 'Verify facts and claims by cross-referencing multiple sources';
+  schema = factCheckToolSchema;
+
+  async _call(input: z.infer<typeof factCheckToolSchema>): Promise<string> {
+    const result = await this.verifyFact(input);
+    return JSON.stringify(result);
   }
 
-  private async verifyFact(params: any): Promise<any> {
+  private async verifyFact(params: z.infer<typeof factCheckToolSchema>): Promise<any> {
     const { claim, sources = [], context = '' } = params;
     
     try {
@@ -49,9 +39,9 @@ export class FactCheckTool extends Tool {
         timestamp: new Date().toISOString(),
         status: 'unverified',
         confidence: 0,
-        supporting: [],
-        contradicting: [],
-        neutral: [],
+        supporting: [] as any[],
+        contradicting: [] as any[],
+        neutral: [] as any[],
         analysis: ''
       };
       
@@ -104,11 +94,11 @@ export class FactCheckTool extends Tool {
       return verification;
     } catch (error) {
       logger.error('Fact-checking error:', error);
-      throw new Error(`Fact-checking failed: ${error.message}`);
+      throw new Error(`Fact-checking failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
-  private assessSourceRelevance(claim: string, content: string, context: string): any {
+  private assessSourceRelevance(claim: string, content: string, _context: string): any {
     const claimWords = claim.toLowerCase().split(/\s+/);
     const contentLower = content.toLowerCase();
     

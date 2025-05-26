@@ -1,5 +1,4 @@
 import { config } from '../../config';
-import { LiteLLMService } from '../../services/LiteLLMService';
 
 export interface AgentLLMConfig {
   provider: string;
@@ -11,34 +10,14 @@ export interface AgentLLMConfig {
 }
 
 export function createLLMConfig(overrides: Partial<AgentLLMConfig> = {}): any {
-  const litellmService = new LiteLLMService();
-  
-  // Create configuration compatible with KaibanJS
-  const llmConfig = {
-    provider: overrides.provider || 'custom',
+  // Create LLM configuration for KaibanJS
+  return {
+    provider: overrides.provider || 'openai',
     model: overrides.model || config.litellm.defaultModel,
     temperature: overrides.temperature || 0.7,
     maxTokens: overrides.maxTokens || 2000,
-    
-    // Custom completion function that uses our LiteLLM service
-    complete: async (prompt: string) => {
-      return litellmService.complete(prompt, {
-        model: overrides.model || config.litellm.defaultModel,
-        temperature: overrides.temperature,
-        maxTokens: overrides.maxTokens
-      });
-    }
+    apiKey: overrides.apiKey || config.litellm.apiKey,
+    apiBaseUrl: overrides.baseUrl || config.litellm.baseUrl,
+    maxRetries: 2
   };
-  
-  // If baseUrl is provided, add it to the config
-  if (config.litellm.baseUrl) {
-    llmConfig['baseUrl'] = config.litellm.baseUrl;
-  }
-  
-  // If apiKey is provided, add it to the config
-  if (config.litellm.apiKey) {
-    llmConfig['apiKey'] = config.litellm.apiKey;
-  }
-  
-  return llmConfig;
 }

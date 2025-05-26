@@ -1,45 +1,36 @@
-import { Tool } from 'kaiban';
+import { StructuredTool } from '@langchain/core/tools';
+import { z } from 'zod';
 import axios from 'axios';
 import { config } from '../../config';
 import { logger } from '../../utils/logger';
 
-export class SearchTool extends Tool {
-  constructor() {
-    super({
-      name: 'search_tool',
-      description: 'Search for information using the configured searXNG instance',
-      parameters: {
-        type: 'object',
-        properties: {
-          query: {
-            type: 'string',
-            description: 'The search query'
-          },
-          maxResults: {
-            type: 'number',
-            description: 'Maximum number of results to return',
-            default: 10
-          },
-          language: {
-            type: 'string',
-            description: 'Language for search results',
-            default: 'en'
-          },
-          timeRange: {
-            type: 'string',
-            description: 'Time range for results (e.g., "day", "week", "month", "year")',
-            default: ''
-          }
-        },
-        required: ['query']
-      },
-      execute: async (params: any) => {
-        return this.performSearch(params);
-      }
-    });
+const searchToolSchema = z.object({
+  query: z.string().describe('The search query'),
+  maxResults: z.number()
+    .optional()
+    .default(10)
+    .describe('Maximum number of results to return'),
+  language: z.string()
+    .optional()
+    .default('en')
+    .describe('Language for search results'),
+  timeRange: z.string()
+    .optional()
+    .default('')
+    .describe('Time range for results (e.g., "day", "week", "month", "year")')
+});
+
+export class SearchTool extends StructuredTool<typeof searchToolSchema> {
+  name = 'search_tool';
+  description = 'Search for information using the configured searXNG instance';
+  schema = searchToolSchema;
+
+  async _call(input: z.infer<typeof searchToolSchema>): Promise<string> {
+    const result = await this.performSearch(input);
+    return JSON.stringify(result);
   }
 
-  private async performSearch(params: any): Promise<any> {
+  private async performSearch(params: z.infer<typeof searchToolSchema>): Promise<any> {
     const { query, maxResults = 10, language = 'en', timeRange = '' } = params;
     
     try {
@@ -82,7 +73,7 @@ export class SearchTool extends Tool {
       };
     } catch (error) {
       logger.error('Search error:', error);
-      throw new Error(`Search failed: ${error.message}`);
+      throw new Error(`Search failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 }

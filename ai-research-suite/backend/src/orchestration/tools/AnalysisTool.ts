@@ -1,39 +1,30 @@
-import { Tool } from 'kaiban';
+import { StructuredTool } from '@langchain/core/tools';
+import { z } from 'zod';
 import { logger } from '../../utils/logger';
 
-export class AnalysisTool extends Tool {
-  constructor() {
-    super({
-      name: 'analysis_tool',
-      description: 'Analyze text content for key insights, themes, and important information',
-      parameters: {
-        type: 'object',
-        properties: {
-          content: {
-            type: 'string',
-            description: 'The content to analyze'
-          },
-          analysisType: {
-            type: 'string',
-            description: 'Type of analysis to perform',
-            enum: ['summary', 'key_points', 'sentiment', 'themes', 'comprehensive'],
-            default: 'comprehensive'
-          },
-          focusAreas: {
-            type: 'array',
-            items: { type: 'string' },
-            description: 'Specific areas to focus on during analysis'
-          }
-        },
-        required: ['content']
-      },
-      execute: async (params: any) => {
-        return this.analyzeContent(params);
-      }
-    });
+const analysisToolSchema = z.object({
+  content: z.string().describe('The content to analyze'),
+  analysisType: z.enum(['summary', 'key_points', 'sentiment', 'themes', 'comprehensive'])
+    .optional()
+    .default('comprehensive')
+    .describe('Type of analysis to perform'),
+  focusAreas: z.array(z.string())
+    .optional()
+    .default([])
+    .describe('Specific areas to focus on during analysis')
+});
+
+export class AnalysisTool extends StructuredTool<typeof analysisToolSchema> {
+  name = 'analysis_tool';
+  description = 'Analyze text content for key insights, themes, and important information';
+  schema = analysisToolSchema;
+
+  async _call(input: z.infer<typeof analysisToolSchema>): Promise<string> {
+    const result = await this.analyzeContent(input);
+    return JSON.stringify(result);
   }
 
-  private async analyzeContent(params: any): Promise<any> {
+  private async analyzeContent(params: z.infer<typeof analysisToolSchema>): Promise<any> {
     const { content, analysisType = 'comprehensive', focusAreas = [] } = params;
     
     try {
@@ -79,7 +70,7 @@ export class AnalysisTool extends Tool {
       return analysis;
     } catch (error) {
       logger.error('Analysis error:', error);
-      throw new Error(`Analysis failed: ${error.message}`);
+      throw new Error(`Analysis failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   

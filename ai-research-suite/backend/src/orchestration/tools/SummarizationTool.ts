@@ -1,39 +1,29 @@
-import { Tool } from 'kaiban';
+import { StructuredTool } from '@langchain/core/tools';
+import { z } from 'zod';
 import { logger } from '../../utils/logger';
 
-export class SummarizationTool extends Tool {
-  constructor() {
-    super({
-      name: 'summarization_tool',
-      description: 'Generate concise summaries of text content',
-      parameters: {
-        type: 'object',
-        properties: {
-          content: {
-            type: 'string',
-            description: 'The content to summarize'
-          },
-          summaryType: {
-            type: 'string',
-            description: 'Type of summary to generate',
-            enum: ['executive', 'bullet_points', 'abstract', 'key_findings'],
-            default: 'executive'
-          },
-          maxLength: {
-            type: 'number',
-            description: 'Maximum length of summary in words',
-            default: 200
-          }
-        },
-        required: ['content']
-      },
-      execute: async (params: any) => {
-        return this.generateSummary(params);
-      }
-    });
+const summarizationToolSchema = z.object({
+  content: z.string().describe('The content to summarize'),
+  summaryType: z.enum(['executive', 'bullet_points', 'abstract', 'key_findings'])
+    .optional()
+    .default('executive')
+    .describe('Type of summary to generate'),
+  maxLength: z.number()
+    .optional()
+    .default(200)
+    .describe('Maximum length of summary in words')
+});
+
+export class SummarizationTool extends StructuredTool<typeof summarizationToolSchema> {
+  name = 'summarization_tool';
+  description = 'Generate concise summaries of text content';
+  schema = summarizationToolSchema;
+
+  async _call(input: z.infer<typeof summarizationToolSchema>): Promise<string> {
+    return JSON.stringify(await this.generateSummary(input));
   }
 
-  private async generateSummary(params: any): Promise<any> {
+  private async generateSummary(params: z.infer<typeof summarizationToolSchema>): Promise<any> {
     const { content, summaryType = 'executive', maxLength = 200 } = params;
     
     try {
@@ -68,7 +58,7 @@ export class SummarizationTool extends Tool {
       return summary;
     } catch (error) {
       logger.error('Summarization error:', error);
-      throw new Error(`Summarization failed: ${error.message}`);
+      throw new Error(`Summarization failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   

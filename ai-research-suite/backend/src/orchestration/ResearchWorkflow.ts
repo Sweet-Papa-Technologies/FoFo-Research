@@ -1,10 +1,9 @@
-import { Team } from 'kaiban';
-import { createResearchAgent, ResearchAgentExecutor } from './agents/ResearchAgent';
-import { createAnalystAgent, AnalystAgentExecutor } from './agents/AnalystAgent';
-import { createWriterAgent, WriterAgentExecutor } from './agents/WriterAgent';
+import { Team, Task } from 'kaibanjs';
+import { createResearchAgent } from './agents/ResearchAgent';
+import { createAnalystAgent } from './agents/AnalystAgent';
+import { createWriterAgent } from './agents/WriterAgent';
 import { logger } from '../utils/logger';
-import { emitProgressUpdate, emitSourceFound, emitStatusChange } from '../utils/websocket';
-import { LiteLLMService } from '../services/LiteLLMService';
+import { emitProgressUpdate, emitStatusChange } from '../utils/websocket';
 
 export interface WorkflowConfig {
   sessionId: string;
@@ -29,38 +28,75 @@ export interface WorkflowConfig {
 export class ResearchWorkflow {
   private team: Team;
   private config: WorkflowConfig;
-  private researchAgent: ResearchAgentExecutor;
-  private analystAgent: AnalystAgentExecutor;
-  private writerAgent: WriterAgentExecutor;
   
   constructor(config: WorkflowConfig) {
     this.config = config;
     
-    const researchAgentInstance = createResearchAgent({
+    const researchAgent = createResearchAgent({
       name: 'Primary Researcher',
       llmConfig: config.llmConfig
     });
     
-    const analystAgentInstance = createAnalystAgent({
+    const analystAgent = createAnalystAgent({
       name: 'Data Analyst',
       llmConfig: config.llmConfig
     });
     
-    const writerAgentInstance = createWriterAgent({
+    const writerAgent = createWriterAgent({
       name: 'Report Writer',
       llmConfig: config.llmConfig
     });
     
-    this.researchAgent = new ResearchAgentExecutor(researchAgentInstance);
-    this.analystAgent = new AnalystAgentExecutor(analystAgentInstance);
-    this.writerAgent = new WriterAgentExecutor(writerAgentInstance);
+    // Create tasks for the workflow
+    const researchTask = new Task({
+      description: this.createResearchPrompt(),
+      agent: researchAgent,
+      expectedOutput: 'Comprehensive research findings with sources'
+    });
+    
+    const analysisTask = new Task({
+      description: 'Analyze the research findings and extract key insights',
+      agent: analystAgent,
+      expectedOutput: 'Detailed analysis with key findings and patterns'
+    });
+    
+    const writingTask = new Task({
+      description: 'Create a well-structured report from the analysis',
+      agent: writerAgent,
+      expectedOutput: 'Final formatted research report'
+    });
     
     this.team = new Team({
       name: 'Research Team',
-      agents: [researchAgentInstance, analystAgentInstance, writerAgentInstance],
-      process: 'sequential',
-      verbose: true
+      agents: [researchAgent, analystAgent, writerAgent],
+      tasks: [researchTask, analysisTask, writingTask],
+      inputs: {
+        topic: config.topic,
+        parameters: config.parameters
+      }
     });
+  }
+
+  private createResearchPrompt(): string {
+    const { topic, parameters } = this.config;
+    return `
+    Research the following topic comprehensively: ${topic}
+    
+    Parameters:
+    - Maximum sources: ${parameters.maxSources}
+    - Minimum sources: ${parameters.minSources}
+    - Report depth: ${parameters.depth}
+    - Language: ${parameters.language || 'en'}
+    ${parameters.allowedDomains ? `- Allowed domains: ${parameters.allowedDomains.join(', ')}` : ''}
+    ${parameters.blockedDomains ? `- Blocked domains: ${parameters.blockedDomains.join(', ')}` : ''}
+    
+    Your task:
+    1. Search for relevant and authoritative sources
+    2. Analyze the information found
+    3. Extract key insights and findings
+    4. Ensure proper citation of all sources
+    5. Focus on accuracy and comprehensiveness
+    `;
   }
   
   async execute(): Promise<any> {
@@ -72,66 +108,15 @@ export class ResearchWorkflow {
         message: 'Research workflow started'
       });
       
-      const phases = ['research', 'analysis', 'writing', 'finalization'];
-      let currentPhaseIndex = 0;
-      
-      emitProgressUpdate({
-        sessionId: this.config.sessionId,
-        progress: {
-          percentage: 0,
-          currentPhase: phases[currentPhaseIndex],
-          phasesCompleted: [],
-          estimatedTimeRemaining: this.estimateTimeRemaining(this.config.parameters)
-        }
-      });
-      
-      const researchResults = await this.executeResearchPhase();
-      currentPhaseIndex++;
-      
-      emitProgressUpdate({
-        sessionId: this.config.sessionId,
-        progress: {
-          percentage: 25,
-          currentPhase: phases[currentPhaseIndex],
-          phasesCompleted: ['research'],
-          estimatedTimeRemaining: this.estimateTimeRemaining(this.config.parameters) * 0.75
-        }
-      });
-      
-      const analysisResults = await this.executeAnalysisPhase(researchResults);
-      currentPhaseIndex++;
-      
-      emitProgressUpdate({
-        sessionId: this.config.sessionId,
-        progress: {
-          percentage: 50,
-          currentPhase: phases[currentPhaseIndex],
-          phasesCompleted: ['research', 'analysis'],
-          estimatedTimeRemaining: this.estimateTimeRemaining(this.config.parameters) * 0.5
-        }
-      });
-      
-      const report = await this.executeWritingPhase(analysisResults);
-      currentPhaseIndex++;
-      
-      emitProgressUpdate({
-        sessionId: this.config.sessionId,
-        progress: {
-          percentage: 75,
-          currentPhase: phases[currentPhaseIndex],
-          phasesCompleted: ['research', 'analysis', 'writing'],
-          estimatedTimeRemaining: this.estimateTimeRemaining(this.config.parameters) * 0.25
-        }
-      });
-      
-      const finalReport = await this.finalizeReport(report, researchResults, analysisResults);
+      // Execute the team workflow
+      const result = await this.team.start();
       
       emitProgressUpdate({
         sessionId: this.config.sessionId,
         progress: {
           percentage: 100,
           currentPhase: 'completed',
-          phasesCompleted: phases,
+          phasesCompleted: ['research', 'analysis', 'writing'],
           estimatedTimeRemaining: 0
         }
       });
@@ -142,181 +127,65 @@ export class ResearchWorkflow {
         message: 'Research workflow completed successfully'
       });
       
-      return finalReport;
+      // Process and format the results
+      return this.processResults(result);
       
     } catch (error) {
       logger.error('Research workflow error:', error);
       emitStatusChange({
         sessionId: this.config.sessionId,
         status: 'failed',
-        message: error.message
+        message: error instanceof Error ? error.message : 'Unknown error'
       });
       throw error;
     }
   }
   
-  private async executeResearchPhase(): Promise<any> {
-    logger.info('Executing research phase');
+  private processResults(result: any): any {
+    // Extract results from the team execution
+    const taskResults = result.tasks || [];
     
-    const researchTasks = [];
-    
-    if (this.config.parameters.depth === 'comprehensive') {
-      researchTasks.push(
-        this.researchAgent.executeResearch(this.config.topic, {
-          ...this.config.parameters,
-          focus: 'overview'
-        }),
-        this.researchAgent.executeResearch(this.config.topic, {
-          ...this.config.parameters,
-          focus: 'recent_developments'
-        }),
-        this.researchAgent.executeResearch(this.config.topic, {
-          ...this.config.parameters,
-          focus: 'expert_opinions'
-        })
-      );
-    } else {
-      researchTasks.push(
-        this.researchAgent.executeResearch(this.config.topic, this.config.parameters)
-      );
-    }
-    
-    const results = await Promise.all(researchTasks);
-    
-    const combinedResults = this.combineResearchResults(results);
-    
-    combinedResults.sources.forEach((source: any) => {
-      emitSourceFound({
-        sessionId: this.config.sessionId,
-        source: {
-          url: source.url,
-          title: source.title,
-          relevanceScore: source.relevanceScore || 0.5,
-          summary: source.summary || ''
+    return {
+      content: taskResults[2]?.output || '', // Writing task output
+      summary: this.extractSummary(taskResults[2]?.output),
+      keyFindings: this.extractKeyFindings(taskResults[1]?.output),
+      sources: this.extractSources(taskResults[0]?.output),
+      citations: this.extractCitations(taskResults[2]?.output),
+      metadata: {
+        topic: this.config.topic,
+        generatedAt: new Date().toISOString(),
+        parameters: this.config.parameters,
+        statistics: {
+          totalSources: 0,
+          analyzedSources: 0,
+          searchQueries: 0,
+          processingTime: Date.now() - parseInt(this.config.sessionId.split('-')[0])
         }
-      });
-    });
-    
-    return combinedResults;
-  }
-  
-  private async executeAnalysisPhase(researchResults: any): Promise<any> {
-    logger.info('Executing analysis phase');
-    
-    const focusAreas = this.determineFocusAreas(this.config.topic, this.config.parameters);
-    
-    const analysisResult = await this.analystAgent.analyzeFindings(
-      researchResults.sources,
-      this.config.topic,
-      focusAreas
-    );
-    
-    return {
-      ...analysisResult,
-      originalSources: researchResults.sources,
-      searchQueries: researchResults.queries
-    };
-  }
-  
-  private async executeWritingPhase(analysisResults: any): Promise<any> {
-    logger.info('Executing writing phase');
-    
-    const report = await this.writerAgent.writeReport(
-      analysisResults,
-      'markdown',
-      this.config.parameters.reportLength
-    );
-    
-    return report;
-  }
-  
-  private async finalizeReport(report: any, researchResults: any, analysisResults: any): Promise<any> {
-    logger.info('Finalizing report');
-    
-    const metadata = {
-      topic: this.config.topic,
-      generatedAt: new Date().toISOString(),
-      parameters: this.config.parameters,
-      statistics: {
-        totalSources: researchResults.sources.length,
-        analyzedSources: analysisResults.originalSources.length,
-        searchQueries: researchResults.queries.length,
-        processingTime: Date.now() - parseInt(this.config.sessionId.split('-')[0])
       }
     };
-    
-    return {
-      content: report.content || report,
-      summary: this.extractSummary(report),
-      keyFindings: this.extractKeyFindings(analysisResults),
-      sources: researchResults.sources,
-      citations: this.extractCitations(report),
-      metadata
-    };
   }
   
-  private combineResearchResults(results: any[]): any {
-    const combined = {
-      sources: [],
-      queries: [],
-      topics: new Set()
-    };
+  private extractSources(output: any): any[] {
+    // Extract sources from the research output
+    if (!output) return [];
     
-    results.forEach(result => {
-      if (result.sources) {
-        combined.sources.push(...result.sources);
+    if (typeof output === 'string') {
+      // Parse sources from string output
+      const sourcePattern = /\[([^\]]+)\]\(([^)]+)\)/g;
+      const sources: any[] = [];
+      let match;
+      
+      while ((match = sourcePattern.exec(output)) !== null) {
+        sources.push({
+          title: match[1],
+          url: match[2]
+        });
       }
-      if (result.queries) {
-        combined.queries.push(...result.queries);
-      }
-      if (result.topics) {
-        result.topics.forEach((topic: string) => combined.topics.add(topic));
-      }
-    });
-    
-    combined.sources = this.deduplicateSources(combined.sources);
-    
-    return {
-      sources: combined.sources,
-      queries: combined.queries,
-      topics: Array.from(combined.topics)
-    };
-  }
-  
-  private deduplicateSources(sources: any[]): any[] {
-    const seen = new Set();
-    return sources.filter(source => {
-      const key = source.url || source.title;
-      if (seen.has(key)) {
-        return false;
-      }
-      seen.add(key);
-      return true;
-    });
-  }
-  
-  private determineFocusAreas(topic: string, parameters: any): string[] {
-    const focusAreas = [];
-    
-    const topicLower = topic.toLowerCase();
-    
-    if (topicLower.includes('technology') || topicLower.includes('tech')) {
-      focusAreas.push('technological advancements', 'innovation', 'implementation challenges');
+      
+      return sources;
     }
     
-    if (topicLower.includes('business') || topicLower.includes('market')) {
-      focusAreas.push('market trends', 'competitive analysis', 'business implications');
-    }
-    
-    if (topicLower.includes('research') || topicLower.includes('study')) {
-      focusAreas.push('methodology', 'findings', 'future research directions');
-    }
-    
-    if (parameters.depth === 'comprehensive') {
-      focusAreas.push('historical context', 'current state', 'future projections');
-    }
-    
-    return focusAreas;
+    return output.sources || [];
   }
   
   private extractSummary(report: any): string {
@@ -351,7 +220,7 @@ export class ResearchWorkflow {
     }
     
     const reportText = typeof report === 'string' ? report : report.content || '';
-    const citations = [];
+    const citations: Array<{ id: string; text: string; url: string }> = [];
     
     const citationMatches = reportText.match(/\[([^\]]+)\]\(([^)]+)\)/g) || [];
     
@@ -367,18 +236,5 @@ export class ResearchWorkflow {
     });
     
     return citations;
-  }
-  
-  private estimateTimeRemaining(parameters: any): number {
-    let baseTime = 120;
-    
-    if (parameters.reportLength === 'comprehensive') baseTime *= 2;
-    else if (parameters.reportLength === 'long') baseTime *= 1.5;
-    
-    if (parameters.depth === 'comprehensive') baseTime *= 1.5;
-    
-    baseTime += parameters.maxSources * 2;
-    
-    return baseTime;
   }
 }
