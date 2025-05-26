@@ -1,0 +1,142 @@
+# searXNG settings for AI Research Suite
+
+general:
+  debug: false
+  instance_name: "AI Research Suite Search"
+  contact_url: false
+  enable_metrics: true
+
+search:
+  safe_search: 0
+  autocomplete: "google"
+  default_lang: "en"
+  max_page: 10
+  port: 8888
+  bind_address: "0.0.0.0"
+  secret_key: "${SEARXNG_SECRET}"
+  
+  # Search settings
+  search_timeout: 10.0
+  max_request_timeout: 15.0
+
+ui:
+  static_path: ""
+  templates_path: ""
+  default_theme: "simple"
+  default_locale: "en"
+  theme_args:
+    simple:
+      style: "auto"
+
+# Enabled search engines
+engines:
+  - name: google
+    engine: google
+    shortcut: g
+    disabled: false
+    
+  - name: bing
+    engine: bing
+    shortcut: b
+    disabled: false
+    
+  - name: duckduckgo
+    engine: duckduckgo
+    shortcut: ddg
+    disabled: false
+    
+  - name: wikipedia
+    engine: wikipedia
+    shortcut: wp
+    disabled: false
+    
+  - name: arxiv
+    engine: arxiv
+    shortcut: arx
+    disabled: false
+    categories: science
+    
+  - name: pubmed
+    engine: pubmed
+    shortcut: pub
+    disabled: false
+    categories: science
+    
+  - name: google scholar
+    engine: google_scholar
+    shortcut: gs
+    disabled: false
+    categories: science
+    
+  - name: github
+    engine: github
+    shortcut: gh
+    disabled: false
+    categories: it
+    
+  - name: stackoverflow
+    engine: stackoverflow
+    shortcut: so
+    disabled: false
+    categories: it
+
+# Categories
+categories_as_tabs:
+  general:
+    - google
+    - bing
+    - duckduckgo
+  science:
+    - arxiv
+    - pubmed
+    - google_scholar
+  it:
+    - github
+    - stackoverflow
+  news:
+    - google_news
+    - bing_news
+
+# Server settings
+server:
+  port: 8888
+  bind_address: "0.0.0.0"
+  secret_key: "${SEARXNG_SECRET}"
+  base_url: false
+  image_proxy: true
+  http_protocol_version: "1.1"
+  method: "GET"
+
+# Result settings
+result_container:
+  # Limit results per page
+  results_per_page: 10
+  # Remove duplicate results
+  remove_duplicates: true
+
+# Privacy settings
+privacy:
+  autocomplete:
+    google:
+      use_mobile_ui: false
+  query_in_title: false
+
+# Outgoing requests
+outgoing:
+  request_timeout: 10.0
+  max_request_timeout: 15.0
+  useragent_suffix: "AI-Research-Suite"
+  pool_connections: 100
+  pool_maxsize: 20
+  enable_http2: true
+
+# Locales
+locales:
+  en: "English"
+
+# API settings for programmatic access
+formats:
+  - html
+  - json
+  - csv
+  - rss

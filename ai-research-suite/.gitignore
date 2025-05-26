@@ -1,0 +1,94 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Testing
+coverage/
+.nyc_output
+
+# Production builds
+dist/
+build/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*.swn
+.DS_Store
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Docker volumes
+data/
+postgres-data/
+redis-data/
+
+# Reports and uploads
+reports/
+uploads/
+screenshots/
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+*.csr
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Lock files (keep package-lock.json and yarn.lock)
+!package-lock.json
+!yarn.lock
+
+# Quasar
+.quasar/
+/dist
+/src-capacitor/node_modules
+/src-cordova/node_modules
+/src-cordova/platforms
+/src-cordova/plugins
+/src-cordova/www
+/src-electron/node_modules
+/src-electron/dist
+/src-ssr/node_modules
+/src-bex/node_modules
+/src-bex/dist

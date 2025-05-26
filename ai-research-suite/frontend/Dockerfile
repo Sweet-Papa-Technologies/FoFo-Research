@@ -3,15 +3,15 @@ FROM node:18-alpine AS builder
 
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
-COPY yarn.lock* ./
+# Copy package files from app directory
+COPY app/package*.json ./
+COPY app/yarn.lock* ./
 
 # Install dependencies
 RUN yarn install --frozen-lockfile || npm ci
 
 # Copy source code
-COPY . .
+COPY app/ .
 
 # Build Quasar app
 RUN yarn build || npm run build
