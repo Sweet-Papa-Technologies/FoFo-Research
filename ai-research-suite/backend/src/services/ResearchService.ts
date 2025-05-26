@@ -60,13 +60,21 @@ export class ResearchService {
         userId: session.userId
       };
       
-      await researchQueue.add('research', jobData, {
-        jobId: sessionId,
-        removeOnComplete: false,
-        removeOnFail: false
-      });
+      logger.info(`Adding job to queue with data:`, jobData);
       
-      logger.info(`Research session ${sessionId} created and queued`);
+      try {
+        const job = await researchQueue.add('research', jobData, {
+          jobId: sessionId,
+          removeOnComplete: false,
+          removeOnFail: false,
+          timeout: 300000 // 5 minute timeout
+        });
+        
+        logger.info(`Research session ${sessionId} created and queued with job ID: ${job.id}`);
+      } catch (queueError: any) {
+        logger.error(`Failed to add job to queue:`, queueError);
+        throw new Error(`Queue error: ${queueError?.message || queueError}`);
+      }
       
       return session;
     } catch (error) {
@@ -214,18 +222,25 @@ export class ResearchService {
   async processResearchJob(job: any): Promise<void> {
     const { sessionId, topic, parameters } = job.data;
     
+    logger.info(`Processing research job: sessionId=${sessionId}, topic="${topic}"`);
+    
     try {
       await this.updateSessionStatus(sessionId, 'processing', { startedAt: new Date() });
+      
+      const llmConfig = {
+        provider: config.litellm.provider || this.extractProvider(config.litellm.defaultModel),
+        model: config.litellm.defaultModel,
+        apiKey: config.litellm.apiKey,
+        baseUrl: config.litellm.baseUrl
+      };
+      
+      logger.info(`Creating workflow with LLM config:`, llmConfig);
       
       const workflow = new ResearchWorkflow({
         sessionId,
         topic,
         parameters,
-        llmConfig: {
-          provider: this.extractProvider(config.litellm.defaultModel),
-          model: config.litellm.defaultModel,
-          apiKey: config.litellm.apiKey
-        }
+        llmConfig
       });
       
       const report = await workflow.execute();

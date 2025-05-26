@@ -22,11 +22,21 @@ export let researchQueue: Bull.Queue<ResearchJobData>;
 export let searchQueue: Bull.Queue;
 
 export async function initializeQueues(): Promise<void> {
-  const redisConfig = {
-    host: config.redis.host,
-    port: config.redis.port,
-    password: config.redis.password,
-  };
+  // Parse Redis URL if available, otherwise use individual settings
+  let redisConfig: any;
+  
+  if (config.redis.url) {
+    // If REDIS_URL is provided, use it directly
+    logger.info(`Initializing queues with Redis URL: ${config.redis.url.replace(/:[^:@]+@/, ':****@')}`);
+    redisConfig = config.redis.url;
+  } else {
+    redisConfig = {
+      host: config.redis.host,
+      port: config.redis.port,
+      password: config.redis.password,
+    };
+    logger.info(`Initializing queues with Redis config: host=${redisConfig.host}, port=${redisConfig.port}`);
+  }
 
   researchQueue = new Bull('research', {
     redis: redisConfig,

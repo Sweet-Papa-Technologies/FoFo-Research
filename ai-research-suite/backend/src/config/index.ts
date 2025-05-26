@@ -44,6 +44,7 @@ interface Config {
     secret?: string;
   };
   litellm: {
+    provider?: string;
     baseUrl?: string;
     apiKey?: string;
     defaultModel: string;
@@ -96,6 +97,7 @@ export const config: Config = {
   },
   
   litellm: {
+    provider: process.env.LITELLM_PROVIDER,
     baseUrl: process.env.LITELLM_BASE_URL,
     apiKey: process.env.LITELLM_API_KEY,
     defaultModel: process.env.LITELLM_DEFAULT_MODEL || 'gpt-3.5-turbo',

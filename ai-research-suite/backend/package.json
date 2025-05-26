@@ -18,7 +18,8 @@
     "migrate:make": "knex migrate:make",
     "migrate:rollback": "knex migrate:rollback",
     "seed": "knex seed:run",
-    "seed:test-user": "node scripts/seed-test-user.js"
+    "seed:test-user": "node scripts/seed-test-user.js",
+    "test:llm": "node scripts/test-llm-connection.js"
   },
   "keywords": [
     "ai",

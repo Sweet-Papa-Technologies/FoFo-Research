@@ -5,8 +5,10 @@ import { logger } from '../utils/logger';
 export async function startResearchWorker(): Promise<void> {
   const researchService = new ResearchService();
   
-  researchQueue.process('research', async (job) => {
-    logger.info(`Processing research job ${job.id}`);
+  logger.info('Initializing research queue processor...');
+  
+  researchQueue.process('research', 1, async (job) => {
+    logger.info(`Processing research job ${job.id} with data:`, job.data);
     
     try {
       await researchService.processResearchJob(job);

@@ -22,6 +22,7 @@ export interface WorkflowConfig {
     provider: string;
     model: string;
     apiKey?: string;
+    baseUrl?: string;
   };
 }
 
@@ -32,21 +33,25 @@ export class ResearchWorkflow {
   constructor(config: WorkflowConfig) {
     this.config = config;
     
+    logger.info('Creating research agent...');
     const researchAgent = createResearchAgent({
       name: 'Primary Researcher',
       llmConfig: config.llmConfig
     });
     
+    logger.info('Creating analyst agent...');
     const analystAgent = createAnalystAgent({
       name: 'Data Analyst',
       llmConfig: config.llmConfig
     });
     
+    logger.info('Creating writer agent...');
     const writerAgent = createWriterAgent({
       name: 'Report Writer',
       llmConfig: config.llmConfig
     });
     
+    logger.info('Creating tasks...');
     // Create tasks for the workflow
     const researchTask = new Task({
       description: this.createResearchPrompt(),
@@ -66,6 +71,7 @@ export class ResearchWorkflow {
       expectedOutput: 'Final formatted research report'
     });
     
+    logger.info('Creating team...');
     this.team = new Team({
       name: 'Research Team',
       agents: [researchAgent, analystAgent, writerAgent],
@@ -75,6 +81,8 @@ export class ResearchWorkflow {
         parameters: config.parameters
       }
     });
+    
+    logger.info('ResearchWorkflow constructor completed');
   }
 
   private createResearchPrompt(): string {
@@ -102,13 +110,18 @@ export class ResearchWorkflow {
   async execute(): Promise<any> {
     try {
       logger.info(`Starting research workflow for topic: ${this.config.topic}`);
+      logger.info(`LLM Config: Provider=${this.config.llmConfig.provider}, Model=${this.config.llmConfig.model}, BaseURL=${this.config.llmConfig.baseUrl}`);
+      
       emitStatusChange({
         sessionId: this.config.sessionId,
         status: 'processing',
         message: 'Research workflow started'
       });
       
+      logger.info('Initializing KaibanJS team...');
+      
       // Execute the team workflow
+      logger.info('Starting team workflow execution...');
       const result = await this.team.start();
       
       emitProgressUpdate({

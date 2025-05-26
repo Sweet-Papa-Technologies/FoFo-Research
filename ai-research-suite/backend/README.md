@@ -507,9 +507,11 @@ DATABASE_URL=postgresql://user:password@localhost:5432/ai_research_suite
 JWT_SECRET=your-secret-key
 JWT_REFRESH_SECRET=your-refresh-secret
 
-# LiteLLM
+# LLM Configuration (uses KaibanJS)
+# Provider options: openai, anthropic, google, azure, cohere, huggingface, ollama, groq, mistral
+LITELLM_PROVIDER=openai  # Optional, defaults to 'openai' if not specified
 LITELLM_API_KEY=your-api-key
-LITELLM_MODEL=gpt-3.5-turbo
+LITELLM_DEFAULT_MODEL=gpt-3.5-turbo
 
 # SearXNG
 SEARXNG_URL=http://localhost:8888
@@ -517,6 +519,52 @@ SEARXNG_URL=http://localhost:8888
 # Server
 PORT=8080
 NODE_ENV=development
+```
+
+### LLM Provider Examples
+
+#### Google Gemini
+```env
+LITELLM_PROVIDER=google
+LITELLM_API_KEY=your-google-api-key
+LITELLM_DEFAULT_MODEL=gemini-1.5-pro
+```
+
+#### Anthropic Claude
+```env
+LITELLM_PROVIDER=anthropic
+LITELLM_API_KEY=your-anthropic-api-key
+LITELLM_DEFAULT_MODEL=claude-3-opus
+```
+
+#### Azure OpenAI
+```env
+LITELLM_PROVIDER=azure
+LITELLM_API_KEY=your-azure-api-key
+LITELLM_DEFAULT_MODEL=your-deployment-name
+LITELLM_BASE_URL=https://your-resource.openai.azure.com
+```
+
+#### Ollama (Local)
+```env
+LITELLM_PROVIDER=ollama
+LITELLM_DEFAULT_MODEL=llama2
+LITELLM_BASE_URL=http://localhost:11434
+# No API key needed for local Ollama
+```
+
+#### Groq
+```env
+LITELLM_PROVIDER=groq
+LITELLM_API_KEY=your-groq-api-key
+LITELLM_DEFAULT_MODEL=llama3-70b
+```
+
+#### Mistral
+```env
+LITELLM_PROVIDER=mistral
+LITELLM_API_KEY=your-mistral-api-key
+LITELLM_DEFAULT_MODEL=mistral-medium
 ```
 
 ## Development

@@ -26,9 +26,12 @@ services:
       NODE_ENV: ${NODE_ENV:-production}
       PORT: 8080
       DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-password}@postgres:5432/${DB_NAME:-research_suite}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://:${REDIS_PASSWORD:-redis_password}@redis:6379
       SEARX_ENDPOINT: ${SEARX_ENDPOINT:-http://searxng:8888}
+      LITELLM_PROVIDER: ${LITELLM_PROVIDER}
       LITELLM_API_KEY: ${LITELLM_API_KEY}
+      LITELLM_DEFAULT_MODEL: ${LITELLM_DEFAULT_MODEL}
+      LITELLM_BASE_URL: ${LITELLM_BASE_URL}
       JWT_SECRET: ${JWT_SECRET}
       ENCRYPTION_KEY: ${ENCRYPTION_KEY}
     volumes:
