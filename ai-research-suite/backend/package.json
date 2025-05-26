@@ -13,6 +13,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
+    "database:clear": "docker exec -it ai-research-suite-postgres-1 psql -U postgres -c \"DROP DATABASE research_suite;\"\ndocker exec -it ai-research-suite-postgres-1 psql -U postgres -c \"CREATE DATABASE research_suite;\"",
     "migrate": "knex migrate:latest",
     "migrate:make": "knex migrate:make",
     "migrate:rollback": "knex migrate:rollback",

@@ -67,6 +67,8 @@ services:
       POSTGRES_DB: ${DB_NAME:-research_suite}
       POSTGRES_USER: ${DB_USER:-postgres}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+    ports:
+      - "5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
       - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -83,6 +85,8 @@ services:
   redis:
     image: redis:7-alpine
     command: redis-server --appendonly yes --requirepass ${REDIS_PASSWORD:-redis_password}
+    ports:
+      - "6379:6379"
     volumes:
       - redis-data:/data
     networks:
@@ -112,7 +116,7 @@ services:
   kaibanjs:
     build:
       context: ./backend
-      dockerfile: Dockerfile.kaiban
+      dockerfile: Dockerfile
     environment:
       REDIS_URL: redis://redis:6379
       NODE_ENV: ${NODE_ENV:-production}

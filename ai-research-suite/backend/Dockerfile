@@ -28,7 +28,7 @@ RUN yarn install --production --frozen-lockfile || npm ci --production
 
 # Copy built application
 COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/public ./public 2>/dev/null || :
+# COPY --from=builder /app/public ./public
 
 # Create non-root user
 RUN addgroup -g 1001 -S nodejs

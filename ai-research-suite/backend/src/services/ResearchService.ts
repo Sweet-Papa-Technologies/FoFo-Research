@@ -26,7 +26,9 @@ export interface StartResearchParams {
 }
 
 export class ResearchService {
-  private db = getDb();
+  private get db() {
+    return getDb();
+  }
   
   async startResearch(params: StartResearchParams): Promise<ResearchSession> {
     const sessionId = uuidv4();
