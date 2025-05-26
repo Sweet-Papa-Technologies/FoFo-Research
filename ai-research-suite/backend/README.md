@@ -1,130 +1,50 @@
-# AI Research Suite - Backend API
+# AI Research Suite Backend API
 
-Backend API server for the AI-Powered Research Suite, built with Node.js, Express, and KaibanJS orchestration.
+## Overview
 
-## Features
-
-- **Research Orchestration**: Multi-agent AI research workflows powered by KaibanJS
-- **Flexible LLM Support**: Works with OpenAI, Anthropic, Ollama, LMStudio, and LiteLLM Proxy
-- **Real-time Updates**: WebSocket support for live research progress
-- **Task Queue**: Asynchronous job processing with Bull
-- **RESTful API**: Clean API design with comprehensive error handling
-- **Database**: PostgreSQL for data persistence
-- **Caching**: Redis for performance optimization
+The AI Research Suite backend provides a comprehensive API for AI-powered research capabilities. It uses JWT authentication and supports multiple LLM providers through LiteLLM.
 
 ## Quick Start
 
-1. **Install dependencies**:
+1. **Install dependencies:**
    ```bash
    npm install
    ```
 
-2. **Configure environment**:
-   ```bash
-   cp .env.example .env
-   # Edit .env with your configuration
-   ```
-
-3. **Set up database**:
+2. **Set up database:**
    ```bash
    npm run migrate
    ```
 
-4. **Create test users** (optional):
+3. **Create test users:**
    ```bash
    npm run seed:test-user
    ```
-   This creates two test accounts:
-   - **Regular User**: `test@example.com` / `testpassword123`
-   - **Admin User**: `admin@example.com` / `adminpassword123`
 
-5. **Start development server**:
+4. **Start the server:**
    ```bash
    npm run dev
    ```
 
-## Authentication
+## Test Accounts
 
-The API uses JWT authentication. To access protected endpoints:
-
-1. **Register a new account** or **login** with existing credentials
-2. Include the token in the `Authorization` header: `Bearer <token>`
-3. Tokens expire after 7 days by default
-
-Example authentication flow:
-```bash
-# 1. Login to get a token
-curl -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email": "test@example.com", "password": "testpassword123"}'
-
-# 2. Use the token for authenticated requests
-curl -X POST http://localhost:8080/api/v1/research \
-  -H "Authorization: Bearer <your-token-here>" \
-  -H "Content-Type: application/json" \
-  -d '{"topic": "AI in healthcare", "parameters": {"maxSources": 20}}'
-```
-
-## LLM Configuration
-
-The backend supports multiple LLM providers through a flexible configuration system:
-
-### OpenAI (Default)
-```env
-# No LITELLM_BASE_URL needed (defaults to OpenAI)
-LITELLM_API_KEY=sk-your-openai-api-key
-LITELLM_DEFAULT_MODEL=gpt-3.5-turbo
-```
-
-### Local Ollama
-```env
-LITELLM_BASE_URL=http://localhost:11434
-# No API key needed for local Ollama
-LITELLM_DEFAULT_MODEL=llama2
-```
-
-### LMStudio
-```env
-LITELLM_BASE_URL=http://localhost:1234/v1
-# No API key needed for LMStudio
-LITELLM_DEFAULT_MODEL=local-model-name
-```
-
-### LiteLLM Proxy
-```env
-LITELLM_BASE_URL=http://localhost:4000
-LITELLM_API_KEY=your-litellm-key  # If configured
-LITELLM_DEFAULT_MODEL=gpt-3.5-turbo
-```
-
-### Supported Models
-
-- **OpenAI**: gpt-3.5-turbo, gpt-4, gpt-4-turbo
-- **Anthropic**: claude-3-opus, claude-3-sonnet
-- **Ollama**: llama2, mistral, mixtral, codellama, and any locally installed models
-- **LMStudio**: Any model loaded in LMStudio
+- Email: `test@example.com`, Password: `testpassword123`
+- Email: `admin@example.com`, Password: `adminpassword123`
 
 ## API Endpoints
 
 ### Authentication
 
-#### Register New User
+#### Register
 `POST /api/v1/auth/register`
 
-**Body Parameters:**
-- `email` (string, required) - User email address
-- `password` (string, required) - Password (min 8 characters)
-- `name` (string, optional) - User's display name
-
-**Example:**
-```bash
-curl -X POST http://localhost:8080/api/v1/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "securepassword123",
-    "name": "John Doe"
-  }'
+**Body:**
+```json
+{
+  "email": "user@example.com",
+  "password": "securepassword123",
+  "name": "John Doe"
+}
 ```
 
 **Response:**
@@ -132,13 +52,13 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 {
   "success": true,
   "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "user": {
       "id": "550e8400-e29b-41d4-a716-446655440000",
       "email": "user@example.com",
-      "name": "John Doe",
-      "role": "user"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      "name": "John Doe"
+    }
   }
 }
 ```
@@ -146,18 +66,19 @@ curl -X POST http://localhost:8080/api/v1/auth/register \
 #### Login
 `POST /api/v1/auth/login`
 
-**Body Parameters:**
-- `email` (string, required) - User email
-- `password` (string, required) - User password
+**Body:**
+```json
+{
+  "email": "test@example.com",
+  "password": "testpassword123"
+}
+```
 
-**Example:**
+**CURL Example:**
 ```bash
 curl -X POST http://localhost:8080/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{
-    "email": "user@example.com",
-    "password": "securepassword123"
-  }'
+  -d '{"email":"test@example.com","password":"testpassword123"}'
 ```
 
 **Response:**
@@ -165,79 +86,59 @@ curl -X POST http://localhost:8080/api/v1/auth/login \
 {
   "success": true,
   "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
     "user": {
-      "id": "550e8400-e29b-41d4-a716-446655440000",
-      "email": "user@example.com",
-      "name": "John Doe",
-      "role": "user"
-    },
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      "id": "209fff32-b498-4c95-be03-459b07daaaf5",
+      "email": "test@example.com",
+      "name": "Test User"
+    }
   }
 }
 ```
 
-#### Get Current User
-`GET /api/v1/auth/me`
+#### Refresh Token
+`POST /api/v1/auth/refresh`
+
+**Body:**
+```json
+{
+  "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+}
+```
+
+#### Logout
+`POST /api/v1/auth/logout`
 
 **Headers:**
 - `Authorization: Bearer <token>`
 
-**Example:**
-```bash
-curl -X GET http://localhost:8080/api/v1/auth/me \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
+### Research
 
-**Response:**
-```json
-{
-    "success": true,
-    "data": {
-        "id": "user-id",
-        "email": "fterry24v2@gmail.com",
-        "role": "user"
-    }
-}
-```
-
-### Research Operations
-
-#### Start New Research
+#### Start Research
 `POST /api/v1/research`
 
 **Headers:**
 - `Authorization: Bearer <token>`
 
-**Body Parameters:**
-- `topic` (string, required) - Research topic
-- `parameters` (object, required) - Research parameters
-  - `maxSources` (number) - Maximum sources to collect (default: 20)
-  - `minSources` (number) - Minimum sources required (default: 5)
-  - `reportLength` (string) - Report length: "short", "medium", "long", "comprehensive" (default: "medium")
-  - `allowedDomains` (array) - Whitelist of domains to search
-  - `blockedDomains` (array) - Blacklist of domains to exclude
-  - `depth` (string) - Research depth: "surface", "standard", "comprehensive" (default: "standard")
-  - `language` (string) - Language code (default: "en")
-  - `dateRange` (string) - Date range for sources (e.g., "7d", "1m", "1y")
+**Body:**
+```json
+{
+  "topic": "Impact of AI on healthcare diagnostics",
+  "parameters": {
+    "depth": "comprehensive",
+    "sources": ["academic", "news", "industry"],
+    "timeRange": "2020-2024"
+  }
+}
+```
 
-**Example:**
+**CURL Example:**
 ```bash
 curl -X POST http://localhost:8080/api/v1/research \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Authorization: Bearer <token>" \
   -H "Content-Type: application/json" \
-  -d '{
-    "topic": "Impact of AI on healthcare diagnostics",
-    "parameters": {
-      "maxSources": 30,
-      "minSources": 10,
-      "reportLength": "comprehensive",
-      "depth": "comprehensive",
-      "language": "en",
-      "dateRange": "1y",
-      "allowedDomains": ["pubmed.gov", "nature.com", "sciencedirect.com"],
-      "blockedDomains": ["wikipedia.org"]
-    }
-  }'
+  -d '{"topic":"Impact of AI on healthcare diagnostics","parameters":{"depth":"comprehensive"}}'
 ```
 
 **Response:**
@@ -245,9 +146,40 @@ curl -X POST http://localhost:8080/api/v1/research \
 {
   "success": true,
   "data": {
-    "sessionId": "750e8400-e29b-41d4-a716-446655440001",
+    "sessionId": "755814b8-9d32-4542-9cf3-d7c0d9470e1b",
     "status": "pending",
-    "createdAt": "2024-01-15T10:35:00Z"
+    "message": "Research job created successfully"
+  }
+}
+```
+
+#### Get Research Session
+`GET /api/v1/research/:sessionId`
+
+**Headers:**
+- `Authorization: Bearer <token>`
+
+**CURL Example:**
+```bash
+curl -X GET http://localhost:8080/api/v1/research/755814b8-9d32-4542-9cf3-d7c0d9470e1b \
+  -H "Authorization: Bearer <token>"
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "id": "755814b8-9d32-4542-9cf3-d7c0d9470e1b",
+    "userId": "209fff32-b498-4c95-be03-459b07daaaf5",
+    "topic": "Impact of AI on healthcare diagnostics",
+    "status": "completed",
+    "parameters": {
+      "depth": "comprehensive"
+    },
+    "reportId": "c3c7a547-03b5-4b41-bc6d-b478b06522e0",
+    "createdAt": "2024-05-26T14:37:04.000Z",
+    "completedAt": "2024-05-26T14:38:20.000Z"
   }
 }
 ```
@@ -259,43 +191,14 @@ curl -X POST http://localhost:8080/api/v1/research \
 - `Authorization: Bearer <token>`
 
 **Query Parameters:**
-- `status` (string, optional) - Filter by status: "pending", "processing", "completed", "failed", "cancelled"
-- `page` (number, optional) - Page number (default: 1)
-- `limit` (number, optional) - Items per page (default: 20, max: 100)
+- `status` (optional): Filter by status (pending, processing, completed, failed, cancelled)
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Results per page (default: 20, max: 100)
 
 **Example:**
 ```bash
 curl -X GET "http://localhost:8080/api/v1/research?status=completed&page=1&limit=10" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "sessions": [
-      {
-        "id": "750e8400-e29b-41d4-a716-446655440001",
-        "topic": "Impact of AI on healthcare diagnostics",
-        "status": "completed",
-        "parameters": {
-          "maxSources": 30,
-          "reportLength": "comprehensive"
-        },
-        "createdAt": "2024-01-15T10:35:00Z",
-        "completedAt": "2024-01-15T10:45:00Z",
-        "reportId": "850e8400-e29b-41d4-a716-446655440002"
-      }
-    ],
-    "pagination": {
-      "page": 1,
-      "limit": 10,
-      "total": 25,
-      "pages": 3
-    }
-  }
-}
+  -H "Authorization: Bearer <token>"
 ```
 
 #### Get Research Progress
@@ -304,128 +207,62 @@ curl -X GET "http://localhost:8080/api/v1/research?status=completed&page=1&limit
 **Headers:**
 - `Authorization: Bearer <token>`
 
-**Example:**
-```bash
-curl -X GET http://localhost:8080/api/v1/research/750e8400-e29b-41d4-a716-446655440001/progress \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
 **Response:**
 ```json
 {
   "success": true,
   "data": {
-    "sessionId": "750e8400-e29b-41d4-a716-446655440001",
+    "sessionId": "755814b8-9d32-4542-9cf3-d7c0d9470e1b",
     "status": "processing",
-    "jobState": "active",
-    "progress": 65,
-    "currentPhase": "analysis",
+    "progress": 45,
+    "currentStep": "Analyzing sources",
     "estimatedTimeRemaining": 120
   }
 }
 ```
 
-### Search
-
-#### Perform Search
-`POST /api/v1/search`
+#### Cancel Research
+`POST /api/v1/research/:sessionId/cancel`
 
 **Headers:**
 - `Authorization: Bearer <token>`
 
-**Body Parameters:**
-- `query` (string, required) - Search query
-- `maxResults` (number, optional) - Maximum results (default: 10, max: 50)
-- `filters` (object, optional) - Search filters
-  - `language` (string) - Language code (default: "en")
-  - `timeRange` (string) - Time range: "day", "week", "month", "year"
-  - `categories` (array) - Search categories
-  - `domains` (array) - Specific domains to search
-
-**Example:**
-```bash
-curl -X POST http://localhost:8080/api/v1/search \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "query": "machine learning healthcare applications",
-    "maxResults": 20,
-    "filters": {
-      "language": "en",
-      "timeRange": "month",
-      "domains": ["arxiv.org", "pubmed.gov"]
-    }
-  }'
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "query": "machine learning healthcare applications",
-    "totalResults": 20,
-    "results": [
-      {
-        "url": "https://arxiv.org/abs/2401.12345",
-        "title": "Deep Learning for Medical Image Analysis",
-        "content": "This paper presents a comprehensive survey of deep learning techniques...",
-        "engine": "google",
-        "score": 0.95
-      }
-    ]
-  }
-}
-```
-
-#### Get Search History
-`GET /api/v1/search/history`
+#### Retry Failed Research
+`POST /api/v1/research/:sessionId/retry`
 
 **Headers:**
 - `Authorization: Bearer <token>`
-
-**Query Parameters:**
-- `limit` (number, optional) - Number of items (default: 20)
-- `offset` (number, optional) - Offset for pagination (default: 0)
-
-**Example:**
-```bash
-curl -X GET "http://localhost:8080/api/v1/search/history?limit=5" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "history": [
-      {
-        "id": "950e8400-e29b-41d4-a716-446655440003",
-        "query": "machine learning healthcare applications",
-        "resultsCount": 20,
-        "searchedAt": "2024-01-15T10:30:00Z"
-      }
-    ]
-  }
-}
-```
 
 ### Reports
 
-#### Get Report
+#### Get Report by ID
 `GET /api/v1/reports/:reportId`
 
 **Headers:**
 - `Authorization: Bearer <token>`
 
 **Query Parameters:**
-- `format` (string, optional) - Response format: "json", "markdown", "html", "text" (default: "json")
+- `format` (optional): Response format (json, markdown, html) - default: json
 
 **Example:**
 ```bash
-curl -X GET "http://localhost:8080/api/v1/reports/850e8400-e29b-41d4-a716-446655440002?format=json" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+curl -X GET "http://localhost:8080/api/v1/reports/c3c7a547-03b5-4b41-bc6d-b478b06522e0?format=markdown" \
+  -H "Authorization: Bearer <token>"
+```
+
+#### Get Report by Session ID
+`GET /api/v1/reports/session/:sessionId`
+
+**Headers:**
+- `Authorization: Bearer <token>`
+
+**Query Parameters:**
+- `format` (optional): Response format (json, markdown, html) - default: json
+
+**Example:**
+```bash
+curl -X GET "http://localhost:8080/api/v1/reports/session/755814b8-9d32-4542-9cf3-d7c0d9470e1b" \
+  -H "Authorization: Bearer <token>"
 ```
 
 **Response:**
@@ -433,17 +270,18 @@ curl -X GET "http://localhost:8080/api/v1/reports/850e8400-e29b-41d4-a716-446655
 {
   "success": true,
   "data": {
-    "id": "850e8400-e29b-41d4-a716-446655440002",
-    "sessionId": "750e8400-e29b-41d4-a716-446655440001",
+    "id": "c3c7a547-03b5-4b41-bc6d-b478b06522e0",
+    "sessionId": "755814b8-9d32-4542-9cf3-d7c0d9470e1b",
     "topic": "Impact of AI on healthcare diagnostics",
-    "content": "# Impact of AI on Healthcare Diagnostics\n\n## Executive Summary\n...",
-    "summary": "This comprehensive report analyzes the transformative impact...",
+    "content": "# Research Report: Impact of AI on Healthcare Diagnostics\n\n## Executive Summary\n...",
+    "summary": "This report examines the transformative impact of AI on healthcare diagnostics...",
     "keyFindings": [
       "AI improves diagnostic accuracy by 23% on average",
-      "Implementation challenges include data privacy and regulatory compliance"
+      "Implementation costs remain a barrier for smaller facilities",
+      "Regulatory frameworks are evolving to accommodate AI tools"
     ],
-    "wordCount": 3500,
-    "createdAt": "2024-01-15T10:45:00Z"
+    "wordCount": 1072,
+    "createdAt": "2024-05-26T14:38:20.000Z"
   }
 }
 ```
@@ -455,28 +293,20 @@ curl -X GET "http://localhost:8080/api/v1/reports/850e8400-e29b-41d4-a716-446655
 - `Authorization: Bearer <token>`
 
 **Query Parameters:**
-- `format` (string, optional) - Download format: "markdown", "text", "html" (default: "markdown")
+- `format` (optional): Download format (markdown, html, pdf, docx) - default: markdown
 
 **Example:**
 ```bash
-curl -X GET "http://localhost:8080/api/v1/reports/850e8400-e29b-41d4-a716-446655440002/download?format=markdown" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -o report.md
+curl -X GET "http://localhost:8080/api/v1/reports/c3c7a547-03b5-4b41-bc6d-b478b06522e0/download?format=pdf" \
+  -H "Authorization: Bearer <token>" \
+  -o report.pdf
 ```
-
-**Response:** File download with appropriate MIME type
 
 #### Get Report Sources
 `GET /api/v1/reports/:reportId/sources`
 
 **Headers:**
 - `Authorization: Bearer <token>`
-
-**Example:**
-```bash
-curl -X GET http://localhost:8080/api/v1/reports/850e8400-e29b-41d4-a716-446655440002/sources \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
 
 **Response:**
 ```json
@@ -485,30 +315,39 @@ curl -X GET http://localhost:8080/api/v1/reports/850e8400-e29b-41d4-a716-4466554
   "data": {
     "sources": [
       {
-        "id": "a50e8400-e29b-41d4-a716-446655440004",
-        "url": "https://www.nature.com/articles/s41591-023-02354-z",
-        "title": "AI in medical diagnostics: A systematic review",
-        "summary": "This systematic review examines 127 studies on AI applications...",
+        "id": "550e8400-e29b-41d4-a716-446655440001",
+        "url": "https://example.com/article",
+        "title": "AI in Medical Imaging: A Comprehensive Review",
+        "summary": "This article reviews the latest advances in AI...",
         "relevanceScore": 0.92,
-        "accessedAt": "2024-01-15T10:40:00Z"
+        "accessedAt": "2024-05-26T14:37:45.000Z"
       }
     ]
   }
 }
 ```
 
-### Settings
-
-#### Get User Settings
-`GET /api/v1/settings/user`
+#### Get Report Citations
+`GET /api/v1/reports/:reportId/citations`
 
 **Headers:**
 - `Authorization: Bearer <token>`
 
-**Example:**
-```bash
-curl -X GET http://localhost:8080/api/v1/settings/user \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+### Search
+
+#### Perform Search
+`POST /api/v1/search`
+
+**Headers:**
+- `Authorization: Bearer <token>`
+
+**Body:**
+```json
+{
+  "query": "AI healthcare diagnostics",
+  "engines": ["google", "duckduckgo"],
+  "maxResults": 20
+}
 ```
 
 **Response:**
@@ -516,56 +355,51 @@ curl -X GET http://localhost:8080/api/v1/settings/user \
 {
   "success": true,
   "data": {
-    "defaultReportLength": "medium",
-    "defaultLanguage": "en",
-    "defaultMaxSources": 20,
-    "emailNotifications": true,
-    "theme": "auto",
-    "preferences": {
-      "autoSave": true,
-      "showTips": true
-    }
+    "results": [
+      {
+        "title": "AI Transforms Healthcare Diagnostics",
+        "url": "https://example.com/article",
+        "snippet": "Recent advances in artificial intelligence are revolutionizing...",
+        "engine": "google"
+      }
+    ],
+    "totalResults": 20,
+    "searchId": "550e8400-e29b-41d4-a716-446655440002"
   }
 }
 ```
 
-#### Update User Settings
-`PUT /api/v1/settings/user`
+#### Get Search History
+`GET /api/v1/search/history`
 
 **Headers:**
 - `Authorization: Bearer <token>`
 
-**Body Parameters:**
-- `defaultReportLength` (string, optional) - Default report length
-- `defaultLanguage` (string, optional) - Default language code
-- `defaultMaxSources` (number, optional) - Default max sources
-- `emailNotifications` (boolean, optional) - Email notifications enabled
-- `theme` (string, optional) - UI theme: "light", "dark", "auto"
-- `preferences` (object, optional) - Additional preferences
+**Query Parameters:**
+- `page` (optional): Page number (default: 1)
+- `limit` (optional): Results per page (default: 20)
 
-**Example:**
-```bash
-curl -X PUT http://localhost:8080/api/v1/settings/user \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
-  -H "Content-Type: application/json" \
-  -d '{
-    "defaultReportLength": "comprehensive",
-    "defaultMaxSources": 50,
-    "theme": "dark",
-    "preferences": {
-      "autoSave": true,
-      "showTips": false
-    }
-  }'
-```
+### Settings
 
-**Response:**
+#### Get User Settings
+`GET /api/v1/settings`
+
+**Headers:**
+- `Authorization: Bearer <token>`
+
+#### Update User Settings
+`PUT /api/v1/settings`
+
+**Headers:**
+- `Authorization: Bearer <token>`
+
+**Body:**
 ```json
 {
-  "success": true,
-  "data": {
-    "message": "Settings updated successfully"
-  }
+  "defaultModel": "gpt-4",
+  "searchEngines": ["google", "duckduckgo", "bing"],
+  "outputFormat": "markdown",
+  "language": "en"
 }
 ```
 
@@ -574,12 +408,6 @@ curl -X PUT http://localhost:8080/api/v1/settings/user \
 
 **Headers:**
 - `Authorization: Bearer <token>`
-
-**Example:**
-```bash
-curl -X GET http://localhost:8080/api/v1/settings/models \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-```
 
 **Response:**
 ```json
@@ -601,11 +429,6 @@ curl -X GET http://localhost:8080/api/v1/settings/models \
         "id": "claude-3-opus",
         "name": "Claude 3 Opus",
         "provider": "anthropic"
-      },
-      {
-        "id": "llama2",
-        "name": "Llama 2",
-        "provider": "meta"
       }
     ],
     "defaultModel": "gpt-3.5-turbo"
@@ -619,160 +442,101 @@ curl -X GET http://localhost:8080/api/v1/settings/models \
 **Headers:**
 - `Authorization: Bearer <token>`
 
-**Example:**
-```bash
-curl -X GET http://localhost:8080/api/v1/settings/search-engines \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+## WebSocket Events
+
+Connect to WebSocket for real-time updates:
+```javascript
+const ws = new WebSocket('ws://localhost:8080');
+
+ws.on('message', (data) => {
+  const event = JSON.parse(data);
+  console.log('Event:', event.type, event.data);
+});
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "engines": [
-      {
-        "id": "searxng-main",
-        "name": "Main searXNG Instance",
-        "endpoint": "http://localhost:8888",
-        "status": "active",
-        "isDefault": true
-      }
-    ]
-  }
-}
-```
+### Event Types
 
-### Error Responses
+- `research.started` - Research job has started processing
+- `research.progress` - Progress update during research
+- `research.completed` - Research completed successfully
+- `research.failed` - Research failed with error
+- `research.cancelled` - Research was cancelled
 
-All endpoints return consistent error responses:
+## Error Responses
 
-**400 Bad Request:**
+All errors follow this format:
 ```json
 {
   "success": false,
   "error": {
     "code": "VALIDATION_ERROR",
-    "message": "Invalid request parameters",
+    "message": "Invalid input data",
     "details": {
       "field": "email",
-      "error": "Invalid email format"
+      "issue": "Invalid email format"
     }
   }
 }
 ```
 
-**401 Unauthorized:**
-```json
-{
-  "success": false,
-  "error": {
-    "code": "UNAUTHORIZED",
-    "message": "Authentication required"
-  }
-}
-```
+### Common Error Codes
 
-**404 Not Found:**
-```json
-{
-  "success": false,
-  "error": {
-    "code": "NOT_FOUND",
-    "message": "Resource not found"
-  }
-}
-```
+- `401` - Unauthorized (invalid or missing token)
+- `403` - Forbidden (insufficient permissions)
+- `404` - Not Found
+- `409` - Conflict (e.g., email already exists)
+- `422` - Validation Error
+- `429` - Rate Limit Exceeded
+- `500` - Internal Server Error
 
-**500 Internal Server Error:**
-```json
-{
-  "success": false,
-  "error": {
-    "code": "INTERNAL_ERROR",
-    "message": "An unexpected error occurred"
-  }
-}
+## Rate Limiting
+
+- Authentication endpoints: 5 requests per minute
+- Research endpoints: 10 requests per minute
+- Other endpoints: 30 requests per minute
+
+## Environment Variables
+
+Create a `.env` file with:
+
+```env
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/ai_research_suite
+
+# JWT
+JWT_SECRET=your-secret-key
+JWT_REFRESH_SECRET=your-refresh-secret
+
+# LiteLLM
+LITELLM_API_KEY=your-api-key
+LITELLM_MODEL=gpt-3.5-turbo
+
+# SearXNG
+SEARXNG_URL=http://localhost:8888
+
+# Server
+PORT=8080
+NODE_ENV=development
 ```
 
 ## Development
 
-### Scripts
-- `npm run dev` - Start development server with hot reload
-- `npm run build` - Build TypeScript to JavaScript
-- `npm start` - Start production server
-- `npm test` - Run tests
-- `npm run lint` - Run ESLint
-- `npm run migrate` - Run database migrations
-
-### Project Structure
-```
-backend/
-├── src/
-│   ├── config/          # Configuration files
-│   ├── controllers/     # Request handlers
-│   ├── middleware/      # Express middleware
-│   ├── models/          # Data models
-│   ├── orchestration/   # KaibanJS agents and tools
-│   │   ├── agents/      # AI agents
-│   │   └── tools/       # Agent tools
-│   ├── routes/          # API routes
-│   ├── services/        # Business logic
-│   ├── utils/           # Utilities
-│   ├── workers/         # Background job processors
-│   └── server.ts        # Main server file
-├── migrations/          # Database migrations
-├── .env.example         # Environment variables template
-└── package.json         # Dependencies and scripts
-```
-
-## Environment Variables
-
-See `.env.example` for all available configuration options. Key variables:
-
-- `PORT` - Server port (default: 8080)
-- `DATABASE_URL` - PostgreSQL connection string
-- `REDIS_URL` - Redis connection string
-- `JWT_SECRET` - Secret for JWT tokens
-- `SEARX_ENDPOINT` - searXNG instance URL
-- `LITELLM_BASE_URL` - LLM API endpoint
-- `LITELLM_API_KEY` - LLM API key
-- `LITELLM_DEFAULT_MODEL` - Default model to use
-
-## Docker Support
-
-Build and run with Docker:
-
 ```bash
-docker build -t ai-research-backend .
-docker run -p 8080:8080 --env-file .env ai-research-backend
-```
+# Run in development mode
+npm run dev
 
-Or use with docker-compose (see main project docker-compose.yml).
+# Build for production
+npm run build
 
-## Testing
-
-Run the test suite:
-
-```bash
-# Unit tests
+# Run tests
 npm test
 
-# Integration tests
-npm run test:integration
+# Run linter
+npm run lint
 
-# Test coverage
-npm run test:coverage
+# Run database migrations
+npm run migrate
+
+# Seed test data
+npm run seed:test-user
 ```
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-MIT License - see LICENSE file in the root directory.
