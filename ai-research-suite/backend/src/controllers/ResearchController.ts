@@ -1,4 +1,5 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
+import { AuthRequest } from '../middleware/auth';
 import { ResearchService } from '../services/ResearchService';
 import { logger } from '../utils/logger';
 import { AppError } from '../middleware/errorHandler';
@@ -10,7 +11,7 @@ export class ResearchController {
     this.researchService = new ResearchService();
   }
   
-  async startResearch(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async startResearch(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { topic, parameters } = req.body;
       const userId = req.user?.id;
@@ -36,7 +37,7 @@ export class ResearchController {
     }
   }
   
-  async listResearch(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async listResearch(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user?.id;
       const { status, page = 1, limit = 20 } = req.query;
@@ -59,7 +60,7 @@ export class ResearchController {
     }
   }
   
-  async getResearch(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getResearch(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { sessionId } = req.params;
       const userId = req.user?.id;
@@ -79,7 +80,7 @@ export class ResearchController {
     }
   }
   
-  async cancelResearch(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async cancelResearch(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { sessionId } = req.params;
       const userId = req.user?.id;
@@ -92,7 +93,7 @@ export class ResearchController {
     }
   }
   
-  async getProgress(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getProgress(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { sessionId } = req.params;
       const userId = req.user?.id;
@@ -108,7 +109,7 @@ export class ResearchController {
     }
   }
   
-  async retryResearch(req: Request, res: Response, next: NextFunction): Promise<void> {
+  async retryResearch(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const { sessionId } = req.params;
       const userId = req.user?.id;

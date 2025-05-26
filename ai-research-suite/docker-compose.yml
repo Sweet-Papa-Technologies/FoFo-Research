@@ -106,6 +106,7 @@ services:
       SEARXNG_SECRET: ${SEARXNG_SECRET}
     volumes:
       - ./docker/searxng/settings.yml:/etc/searxng/settings.yml:ro
+      - searxng-data:/etc/searxng
     networks:
       - research-network
     restart: unless-stopped
@@ -143,6 +144,7 @@ services:
 volumes:
   postgres-data:
   redis-data:
+  searxng-data:
 
 networks:
   research-network:

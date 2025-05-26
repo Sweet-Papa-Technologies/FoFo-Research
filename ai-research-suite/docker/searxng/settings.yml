@@ -74,11 +74,7 @@ engines:
     disabled: false
     categories: it
     
-  - name: stackoverflow
-    engine: stackoverflow
-    shortcut: so
-    disabled: false
-    categories: it
+  # StackOverflow search is now integrated through other engines
 
 # Categories
 categories_as_tabs:
@@ -92,7 +88,6 @@ categories_as_tabs:
     - google_scholar
   it:
     - github
-    - stackoverflow
   news:
     - google_news
     - bing_news
