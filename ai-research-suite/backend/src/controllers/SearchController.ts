@@ -1,41 +1,110 @@
-import { Request, Response, NextFunction } from 'express';
+import { Response, NextFunction } from 'express';
 import { logger } from '../utils/logger';
+import { SearchTool } from '../orchestration/tools/SearchTool';
+import { getDb } from '../utils/database';
+import { AuthRequest } from '../middleware/auth';
+import { v4 as uuidv4 } from 'uuid';
 
 export class SearchController {
-  async search(req: Request, res: Response, next: NextFunction): Promise<void> {
+  private searchTool: SearchTool;
+  
+  constructor() {
+    this.searchTool = new SearchTool();
+  }
+  
+  private get db() {
+    return getDb();
+  }
+  
+  async search(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { query, maxResults: _maxResults, filters: _filters } = req.body;
-      // const _userId = req.user?.id;
+      const { query, maxResults = 10, filters } = req.body;
+      const userId = req.user?.id;
       
       logger.info(`Performing search: ${query}`);
       
-      // TODO: Implement search functionality
+      // Perform the search using KaibanJS SearchTool
+      const searchParams = {
+        query,
+        maxResults: Math.min(maxResults, 50), // Limit max results
+        language: filters?.language || 'en',
+        timeRange: filters?.timeRange || ''
+      };
+      
+      const searchResult = await this.searchTool._call(searchParams);
+      const parsedResult = JSON.parse(searchResult);
+      
+      // Save search to history if user is authenticated
+      if (userId) {
+        await this.saveSearchHistory(userId, query, parsedResult);
+      }
+      
       res.json({
         success: true,
-        data: {
-          query,
-          totalResults: 0,
-          results: []
-        }
+        data: parsedResult
       });
     } catch (error) {
+      logger.error('Search error:', error);
       next(error);
     }
   }
   
-  async getSearchHistory(_req: Request, res: Response, next: NextFunction): Promise<void> {
+  async getSearchHistory(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      // const _userId = req.user?.id;
+      const userId = req.user?.id;
+      const { limit = 20, offset = 0 } = req.query;
       
-      // TODO: Implement search history retrieval
+      if (!userId) {
+        res.json({
+          success: true,
+          data: {
+            history: []
+          }
+        });
+        return;
+      }
+      
+      const history = await this.db('search_history')
+        .where('user_id', userId)
+        .orderBy('searched_at', 'desc')
+        .limit(Number(limit))
+        .offset(Number(offset))
+        .select('id', 'query', 'result_count', 'searched_at');
+      
       res.json({
         success: true,
         data: {
-          history: []
+          history: history.map(item => ({
+            id: item.id,
+            query: item.query,
+            resultsCount: item.result_count,
+            searchedAt: item.searched_at
+          }))
         }
       });
     } catch (error) {
+      logger.error('Failed to retrieve search history:', error);
       next(error);
+    }
+  }
+  
+  private async saveSearchHistory(
+    userId: string, 
+    query: string, 
+    results: any
+  ): Promise<void> {
+    try {
+      await this.db('search_history').insert({
+        id: uuidv4(),
+        user_id: userId,
+        query,
+        result_count: results.totalResults || 0,
+        filters: {}, // Could be extended to save actual filters
+        searched_at: new Date()
+      });
+    } catch (error) {
+      logger.error('Failed to save search history:', error);
+      // Don't throw - this is not critical
     }
   }
 }
