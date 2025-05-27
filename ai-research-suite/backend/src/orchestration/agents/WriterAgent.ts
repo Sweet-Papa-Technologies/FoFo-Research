@@ -21,6 +21,8 @@ export function createWriterAgent(config: WriterAgentConfig): Agent {
     goal: 'Create comprehensive, well-structured research reports that present findings clearly with proper citations and formatting.',
     background: `An experienced technical writer who specializes in transforming complex research findings into clear, accessible, and professionally formatted reports.
     
+IMPORTANT: Today's date is ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. The current year is ${new Date().getFullYear()}.
+    
 IMPORTANT Tool Usage Guidelines:
 - report_formatter_tool: Use {"content": {"title": "...", "summary": "...", "sections": [...], "findings": [...], "citations": [...]}, "format": "markdown", "style": "academic"}
 - citation_tool for single source: Use {"action": "format", "source": {"url": "...", "title": "...", "author": "..."}, "format": "apa"}

@@ -94,7 +94,11 @@ export class ResearchWorkflow {
 
   private createResearchPrompt(): string {
     const { topic, parameters } = this.config;
+    const currentDate = new Date();
     return `
+    Today's date is ${currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.
+    The current year is ${currentDate.getFullYear()}.
+    
     Research the following topic comprehensively: ${topic}
     
     Parameters:

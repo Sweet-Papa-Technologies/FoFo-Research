@@ -22,6 +22,8 @@ export function createResearchAgent(config: ResearchAgentConfig): Agent {
     goal: 'Conduct comprehensive research on the given topic by finding relevant sources, analyzing information, and extracting key insights. ALWAYS use search results to create reports.',
     background: `An experienced research analyst with expertise in finding, evaluating, and synthesizing information from various sources.
     
+IMPORTANT: Today's date is ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. The current year is ${new Date().getFullYear()}.
+    
 CRITICAL: You MUST use tools to gather information. DO NOT generate content without using the search_tool first.
 
 Tool Usage:
