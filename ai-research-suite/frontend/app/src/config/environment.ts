@@ -8,8 +8,8 @@ export const getEnvironment = (): EnvironmentConfig => {
   const isDevelopment = process.env.NODE_ENV === 'development';
   
   return {
-    apiUrl: isDevelopment ? 'http://localhost:80' : window.location.origin,
-    wsUrl: isDevelopment ? 'ws://localhost:80' : `ws://${window.location.host}`,
+    apiUrl: '', // Use relative URL so proxy works
+    wsUrl: isDevelopment ? `ws://${window.location.host}` : `ws://${window.location.host}`,
     isDevelopment
   };
 };

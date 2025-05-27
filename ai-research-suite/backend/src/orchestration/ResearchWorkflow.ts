@@ -195,7 +195,7 @@ export class ResearchWorkflow {
       name: 'AI Research Team',
       agents: [plannerAgent, researchAgent, analystAgent, writerAgent],
       tasks: [planningTask, researchTask, analysisTask, writingTask],
-      // logLevel: 'debug',
+      logLevel: 'debug',
       inputs: {
         topic: config.topic,
         sessionId: config.sessionId,

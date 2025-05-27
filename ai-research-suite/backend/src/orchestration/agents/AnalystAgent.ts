@@ -51,6 +51,7 @@ Action Input: {"action": "retrieve_sources", "sessionId": "[session-id]", "limit
       temperature: config.llmConfig.temperature || 0.3,
       maxTokens: config.llmConfig.maxTokens || 32000
     }, 25),
-    maxIterations: 100
+    maxIterations: 100,
+    forceFinalAnswer: true
   });
 }
