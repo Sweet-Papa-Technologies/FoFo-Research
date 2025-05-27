@@ -279,26 +279,56 @@ export class ResearchWorkflow {
       // Try to extract Executive Summary section
       const summaryMatch = report.match(/##\s*Executive Summary\s*\n+([^#]+)/i);
       if (summaryMatch) {
-        return summaryMatch[1].trim();
+        // Get all text until the next section header
+        const summaryText = summaryMatch[1].trim();
+        // Remove any table of contents or navigation elements
+        const cleanSummary = summaryText
+          .split('\n')
+          .filter(line => !line.match(/^\d+\.\s*\[.*\]\(#.*\)$/)) // Remove TOC entries
+          .join('\n')
+          .trim();
+        
+        if (cleanSummary) return cleanSummary;
       }
       
-      // If no executive summary, try to get the first paragraph after the title
-      const lines = report.split('\n').filter(line => line.trim());
-      let foundTitle = false;
-      let summary = '';
-      
-      for (const line of lines) {
-        if (line.startsWith('#') && !line.startsWith('##')) {
-          foundTitle = true;
-          continue;
-        }
-        if (foundTitle && line.trim() && !line.startsWith('#')) {
-          summary = line.trim();
-          break;
+      // Try to extract Introduction section - handle both plain and titled formats
+      const introMatch = report.match(/##\s*Introduction(?:\s*:\s*[^\n]+)?\s*\n+([^#]+)/i);
+      if (introMatch) {
+        const introText = introMatch[1].trim();
+        // Remove any table of contents entries
+        const cleanIntro = introText
+          .split('\n')
+          .filter(line => !line.match(/^\d+\.\s*\[.*\]\(#.*\)$/))
+          .join('\n')
+          .trim();
+        
+        if (cleanIntro) {
+          // For Introduction sections, use the full content as summary
+          // since it typically contains the overview
+          return cleanIntro;
         }
       }
       
-      return summary || 'No summary available';
+      // If no Executive Summary or Introduction, get first content section after title
+      // Look for the first section that's not Key Findings
+      const titleMatch = report.match(/^#\s+[^\n]+\n/);
+      const afterTitle = titleMatch ? report.substring(titleMatch.index! + titleMatch[0].length) : report;
+      
+      // Find first section that's not Key Findings
+      const sectionMatch = afterTitle.match(/##\s+(?!Key Findings)([^\n]+)\n+([^#]+)/);
+      if (sectionMatch) {
+        const sectionContent = sectionMatch[2].trim();
+        // Get first meaningful paragraph
+        const paragraphs = sectionContent.split('\n\n').filter(p => p.trim());
+        for (const paragraph of paragraphs) {
+          // Skip if it's a list or reference
+          if (!paragraph.match(/^[\d\[\*\-]/) && paragraph.length > 50) {
+            return paragraph.trim();
+          }
+        }
+      }
+      
+      return 'No summary available';
     }
     
     return report.summary || '';
@@ -310,27 +340,34 @@ export class ResearchWorkflow {
     if (typeof report === 'string') {
       const findings: string[] = [];
       
-      // Look for Key Findings section
+      // Look for Key Findings section with our standardized format
       const keyFindingsMatch = report.match(/##\s*Key Findings\s*\n+([^#]+)/i);
       if (keyFindingsMatch) {
         const findingsText = keyFindingsMatch[1].trim();
         
-        // Extract each finding (usually starts with ###)
-        const findingMatches = findingsText.match(/###\s*([^\n]+)/g);
-        if (findingMatches) {
-          findingMatches.forEach(match => {
-            findings.push(match.replace(/^###\s*/, '').trim());
-          });
+        // Extract numbered findings with format: "1. **Finding Title:** Description [references]"
+        // Split by line numbers to handle multi-line findings
+        const lines = findingsText.split('\n');
+        let currentFinding = '';
+        
+        for (const line of lines) {
+          // Check if this line starts a new numbered finding
+          if (/^\d+\.\s*\*\*/.test(line)) {
+            // Save previous finding if exists
+            if (currentFinding) {
+              findings.push(currentFinding.trim());
+            }
+            // Start new finding
+            currentFinding = line;
+          } else if (currentFinding && line.trim()) {
+            // Continue current finding (for multi-line findings)
+            currentFinding += ' ' + line.trim();
+          }
         }
         
-        // If no ### headers, try bullet points
-        if (findings.length === 0) {
-          const bulletMatches = findingsText.match(/[-*]\s*([^\n]+)/g);
-          if (bulletMatches) {
-            bulletMatches.forEach(match => {
-              findings.push(match.replace(/^[-*]\s*/, '').trim());
-            });
-          }
+        // Don't forget the last finding
+        if (currentFinding) {
+          findings.push(currentFinding.trim());
         }
       }
       
