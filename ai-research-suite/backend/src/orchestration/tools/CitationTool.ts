@@ -68,6 +68,11 @@ export class CitationTool extends StructuredTool<typeof citationToolSchema> {
     const citationId = `cite-${uuidv4().substring(0, 8)}`;
     const accessedDate = source.accessedDate || new Date().toISOString().split('T')[0];
     
+    // Enhanced date handling - try to extract date from content or URL if not provided
+    if (!source.publishedDate) {
+      source.publishedDate = this.extractDateFromSource(source);
+    }
+    
     let citationText = '';
     
     switch (format) {
@@ -99,7 +104,8 @@ export class CitationTool extends StructuredTool<typeof citationToolSchema> {
       citation: citationText,
       source: {
         ...source,
-        accessedDate
+        accessedDate,
+        publishedDate: source.publishedDate
       }
     };
   }
@@ -110,8 +116,8 @@ export class CitationTool extends StructuredTool<typeof citationToolSchema> {
   }
   
   private formatAPA(source: any, accessedDate: string): string {
-    const author = source.author || 'Unknown Author';
-    const year = source.publishedDate ? new Date(source.publishedDate).getFullYear() : 'n.d.';
+    const author = source.author || this.extractSiteName(source.url);
+    const year = source.publishedDate ? new Date(source.publishedDate).getFullYear() : new Date().getFullYear();
     const title = source.title || 'Untitled';
     const url = source.url;
     
@@ -228,5 +234,44 @@ export class CitationTool extends StructuredTool<typeof citationToolSchema> {
     } catch {
       return false;
     }
+  }
+  
+  private extractDateFromSource(source: any): string | null {
+    // Try to extract date from URL
+    if (source.url) {
+      const urlDateMatch = source.url.match(/(\d{4})[-/](\d{1,2})[-/](\d{1,2})/);
+      if (urlDateMatch) {
+        return `${urlDateMatch[1]}-${urlDateMatch[2].padStart(2, '0')}-${urlDateMatch[3].padStart(2, '0')}`;
+      }
+    }
+    
+    // Try to extract date from content
+    if (source.content) {
+      // Look for common date patterns
+      const datePatterns = [
+        /(\w+ \d{1,2}, \d{4})/,  // May 26, 2025
+        /(\d{1,2} \w+ \d{4})/,   // 26 May 2025
+        /(\d{4}-\d{2}-\d{2})/,   // 2025-05-26
+        /(\d{2}\/\d{2}\/\d{4})/  // 05/26/2025
+      ];
+      
+      for (const pattern of datePatterns) {
+        const match = source.content.match(pattern);
+        if (match) {
+          try {
+            const date = new Date(match[1]);
+            if (!isNaN(date.getTime())) {
+              return date.toISOString().split('T')[0];
+            }
+          } catch {
+            // Continue to next pattern
+          }
+        }
+      }
+    }
+    
+    // If no date found, return today's date instead of null
+    // This prevents "(n.d.)" in citations
+    return new Date().toISOString().split('T')[0];
   }
 }

@@ -103,6 +103,7 @@ export class SearchTool extends StructuredTool<typeof searchToolSchema> {
         query,
         totalResults: processedResults.length,
         contentExtracted: extractContent,
+        searchTimestamp: new Date().toISOString(),
         results: processedResults
       };
     } catch (error) {
@@ -146,12 +147,14 @@ export class SearchTool extends StructuredTool<typeof searchToolSchema> {
           snippet: result.content, // Original search snippet
           engine: result.engine,
           score: result.score || 0,
+          extractedAt: new Date().toISOString(),
           extractedContent: {
             fullText: extractedContent.content.substring(0, 500) + '...', // Truncated for response size
             textLength: extractedContent.textLength,
             summary: summary.summary,
             keyPoints: summary.keyPoints,
-            relevanceScore: summary.relevance
+            relevanceScore: summary.relevance,
+            publishedDate: extractedContent.publishedDate || null
           }
         });
         

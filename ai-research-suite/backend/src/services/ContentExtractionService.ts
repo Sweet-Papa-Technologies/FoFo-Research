@@ -9,6 +9,7 @@ interface ExtractedContent {
   title: string;
   content: string;
   textLength: number;
+  publishedDate?: string;
   error?: string;
 }
 
@@ -88,11 +89,14 @@ export class ContentExtractionService {
       
       if (article) {
         const cleanText = this.cleanText(article.textContent);
+        const publishedDate = this.extractPublishedDate(dom.window.document);
+        
         return {
           url,
           title: article.title || '',
           content: cleanText,
-          textLength: cleanText.length
+          textLength: cleanText.length,
+          publishedDate
         };
       }
       
@@ -140,12 +144,14 @@ export class ContentExtractionService {
     }
     
     const cleanedContent = this.cleanText(content);
+    const publishedDate = this.extractPublishedDateFromCheerio($);
     
     return {
       url,
       title: title.trim(),
       content: cleanedContent,
-      textLength: cleanedContent.length
+      textLength: cleanedContent.length,
+      publishedDate
     };
   }
 
@@ -170,5 +176,101 @@ export class ContentExtractionService {
     }
     
     return results;
+  }
+  
+  private extractPublishedDate(document: Document): string | undefined {
+    // Try various meta tags for published date
+    const metaSelectors = [
+      'meta[property="article:published_time"]',
+      'meta[name="pubdate"]',
+      'meta[name="publishdate"]',
+      'meta[name="date"]',
+      'meta[property="og:updated_time"]',
+      'meta[name="dcterms.date"]',
+      'meta[name="DC.date.issued"]',
+      'time[datetime]',
+      'time[pubdate]'
+    ];
+    
+    for (const selector of metaSelectors) {
+      const element = document.querySelector(selector);
+      if (element) {
+        const date = element.getAttribute('content') || 
+                    element.getAttribute('datetime') || 
+                    element.textContent;
+        if (date) {
+          return this.normalizeDate(date);
+        }
+      }
+    }
+    
+    // Try to find date in structured data
+    const structuredData = document.querySelector('script[type="application/ld+json"]');
+    if (structuredData && structuredData.textContent) {
+      try {
+        const data = JSON.parse(structuredData.textContent);
+        if (data.datePublished) {
+          return this.normalizeDate(data.datePublished);
+        }
+      } catch (e) {
+        // Ignore parsing errors
+      }
+    }
+    
+    return undefined;
+  }
+  
+  private extractPublishedDateFromCheerio($: cheerio.CheerioAPI): string | undefined {
+    // Try various meta tags for published date
+    const metaSelectors = [
+      'meta[property="article:published_time"]',
+      'meta[name="pubdate"]',
+      'meta[name="publishdate"]',
+      'meta[name="date"]',
+      'meta[property="og:updated_time"]',
+      'meta[name="dcterms.date"]',
+      'meta[name="DC.date.issued"]',
+      'time[datetime]',
+      'time[pubdate]'
+    ];
+    
+    for (const selector of metaSelectors) {
+      const element = $(selector);
+      if (element.length > 0) {
+        const date = element.attr('content') || 
+                    element.attr('datetime') || 
+                    element.text();
+        if (date) {
+          return this.normalizeDate(date);
+        }
+      }
+    }
+    
+    // Try to find date in structured data
+    const structuredData = $('script[type="application/ld+json"]');
+    if (structuredData.length > 0 && structuredData.text()) {
+      try {
+        const data = JSON.parse(structuredData.text());
+        if (data.datePublished) {
+          return this.normalizeDate(data.datePublished);
+        }
+      } catch (e) {
+        // Ignore parsing errors
+      }
+    }
+    
+    return undefined;
+  }
+  
+  private normalizeDate(dateStr: string): string {
+    try {
+      const date = new Date(dateStr);
+      if (!isNaN(date.getTime())) {
+        return date.toISOString();
+      }
+    } catch (e) {
+      // Ignore parsing errors
+    }
+    return dateStr; // Return original if parsing fails
   }
 }

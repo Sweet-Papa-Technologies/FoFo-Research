@@ -4,6 +4,7 @@ import { createAnalystAgent } from './agents/AnalystAgent';
 import { createWriterAgent } from './agents/WriterAgent';
 import { logger } from '../utils/logger';
 import { emitProgressUpdate, emitStatusChange } from '../utils/websocket';
+import { DeduplicationService } from '../services/DeduplicationService';
 
 export interface WorkflowConfig {
   sessionId: string;
@@ -223,18 +224,23 @@ export class ResearchWorkflow {
     logger.debug('Parsed content type:', typeof parsedContent);
     logger.debug('Content preview:', parsedContent ? parsedContent.substring(0, 200) : 'No content');
 
+    // Apply deduplication to remove redundant content
+    const deduplicationService = DeduplicationService.getInstance();
+    const deduplicatedContent = deduplicationService.consolidateFindings(parsedContent);
+    const finalContent = deduplicationService.mergeSimilarContent(deduplicatedContent);
+
     return {
-      content: parsedContent,
-      summary: this.extractSummary(parsedContent),
-      keyFindings: this.extractKeyFindings(parsedContent),
-      sources: this.extractSources(parsedContent),
-      citations: this.extractCitations(parsedContent),
+      content: finalContent,
+      summary: this.extractSummary(finalContent),
+      keyFindings: this.extractKeyFindings(finalContent),
+      sources: this.extractSources(finalContent),
+      citations: this.extractCitations(finalContent),
       metadata: {
         topic: this.config.topic,
         generatedAt: new Date().toISOString(),
         parameters: this.config.parameters,
         statistics: {
-          totalSources: this.extractSources(parsedContent).length,
+          totalSources: this.extractSources(finalContent).length,
           analyzedSources: 0,
           searchQueries: 0,
           processingTime: Date.now() - new Date().getTime()
