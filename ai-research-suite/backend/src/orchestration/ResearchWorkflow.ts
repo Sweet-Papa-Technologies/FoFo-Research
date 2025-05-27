@@ -60,54 +60,62 @@ export class ResearchWorkflow {
     
     logger.info('Creating tasks...');
     
-    // Task 1: Planning - Generate multiple search queries
+    // Task 1: Planning - Generate multiple search queries based on source requirements
     const planningTask = new Task({
       referenceId: 'planning',
       description: `Create a comprehensive search strategy for the topic: ${config.topic}
       
-      Requirements:
-      - Generate 5-10 specific search queries
-      - Each query should target different aspects of the topic
-      - Include queries for predictions, betting odds, expert analysis, and statistics
-      - Output format: JSON array with objects containing: query, priority (1-5), purpose
+      Source Requirements:
+      - Minimum sources required: ${config.parameters.minSources}
+      - Maximum sources allowed: ${config.parameters.maxSources}
+      - Each query typically yields 5-10 sources
       
-      Example output:
-      {
-        "queries": [
-          {"query": "Lakers vs Celtics predictions expert analysis 2024", "priority": 1, "purpose": "Expert predictions"},
-          {"query": "Lakers Celtics betting odds spread moneyline", "priority": 2, "purpose": "Betting information"},
-          {"query": "Lakers vs Celtics head to head statistics recent games", "priority": 3, "purpose": "Historical data"}
-        ]
-      }`,
+      Generate search queries that will efficiently gather diverse, high-quality sources within these limits.
+      Include the minSourcesRequired and maxSourcesAllowed values in your output.`,
       agent: plannerAgent,
-      expectedOutput: 'JSON array of search queries with priorities and purposes'
+      expectedOutput: 'A comprehensive search strategy with multiple queries, each having priority, purpose, and expected source counts'
     });
     
-    // Task 2: Research - Execute searches and store results
+    // Task 2: Research - Execute searches and store results with source limits
     const researchTask = new Task({
       referenceId: 'research',
-      description: `Execute the search queries from planning: {taskResult:planning}
+      description: `Execute the search queries from the planning task: {taskResult:planning}
       
       Session ID: ${config.sessionId}
       
       Instructions:
-      1. Parse the queries from the planning task
-      2. Execute each search query using the search_tool
-      3. For each search result:
-         - Extract and store the content using database_tool
-         - Include source metadata (title, URL, date, organization)
-      4. Store at least ${config.parameters.minSources} sources total
-      5. Focus on high-quality, recent sources
-      6. Process queries in priority order
+      1. Extract the search queries from the planning task output
+      2. Execute each query using search_tool in priority order
+      3. For each search result, extract and store the content using database_tool
+      4. Track the total number of sources stored
+      5. Stop searching once you reach ${config.parameters.maxSources} sources
+      6. Ensure you collect at least ${config.parameters.minSources} high-quality sources
       
-      Database storage format:
-      - dataType: 'search_results' for raw results
-      - dataType: 'extracted_content' for article content
+      IMPORTANT: Pass tool parameters as objects, not JSON strings!
       
-      Return a summary of sources found and stored.`,
+      Tool usage - use these exact parameter names:
+      - For search_tool: 
+        - query: "the search query"
+        - maxResults: 10
+        - extractContent: true
+      - For database_tool to store:
+        - action: "store"
+        - sessionId: "${config.sessionId}"
+        - data: {dataType: "extracted_content", source: {url: "...", title: "...", author: "...", publishedDate: "..."}, content: "...", summary: "..."}
+      
+      Source selection criteria:
+      - Prioritize recent sources (within last 6 months)
+      - Prefer reputable organizations
+      - Ensure diversity of perspectives
+      - Avoid duplicate content
+      
+      Return a detailed summary including:
+      - Total sources found and stored
+      - Breakdown by query
+      - Confirmation that min/max requirements were met`,
       agent: researchAgent,
       dependencies: ['planning'],
-      expectedOutput: 'Summary of research data collected and stored in database'
+      expectedOutput: 'Detailed summary of sources collected with counts and confirmation of meeting min/max requirements'
     });
     
     // Task 3: Analysis - Analyze the collected data
@@ -116,23 +124,27 @@ export class ResearchWorkflow {
       description: `Analyze all research data stored in the database.
       
       Session ID: ${config.sessionId}
+      Research Summary: {taskResult:research}
       
       Instructions:
-      1. Retrieve all stored research data using database_tool
-      2. Analyze the content to identify:
+      1. Note the total number of sources collected from the research summary
+      2. Retrieve all stored research data using database_tool (limit: ${config.parameters.maxSources})
+      3. Analyze the content to identify:
          - Key findings and insights
          - Predictions from experts
          - Betting odds and spreads
          - Statistical trends
          - Consensus opinions
-      3. Organize findings by theme
-      4. Identify the most credible sources
-      5. Note any conflicting information
+      4. Organize findings by theme
+      5. Identify the most credible sources
+      6. Note any conflicting information
+      7. Ensure your analysis covers all ${config.parameters.minSources}-${config.parameters.maxSources} sources collected
       
-      Focus on providing actionable insights that can be used in the final report.`,
+      Focus on providing actionable insights that can be used in the final report.
+      Include a source count verification in your output.`,
       agent: analystAgent,
       dependencies: ['research'],
-      expectedOutput: 'Comprehensive analysis with key findings, patterns, and insights'
+      expectedOutput: 'Comprehensive analysis with key findings, patterns, insights, and source count verification'
     });
     
     // Task 4: Writing - Create the final report
@@ -142,18 +154,22 @@ export class ResearchWorkflow {
       
       Session ID: ${config.sessionId}
       Analysis findings: {taskResult:analysis}
+      Research summary: {taskResult:research}
       
       CRITICAL REQUIREMENTS:
-      1. Use database_tool to retrieve all source data
-      2. Structure the report with:
+      1. Use database_tool to retrieve all source data (limit: ${config.parameters.maxSources})
+      2. Verify you're using ${config.parameters.minSources}-${config.parameters.maxSources} sources total
+      3. Structure the report with:
          - Executive Summary
          - Key Findings (3-5 bullet points)
          - Main sections with analysis
          - References with proper citations
-      3. NEVER cite "Internal Research Data"
-      4. Include actual source citations (Organization, Date, Title, URL)
-      5. Integrate expert predictions and betting information naturally
-      6. Use markdown formatting
+      4. NEVER cite "Internal Research Data"
+      5. Include actual source citations (Organization, Date, Title, URL)
+      6. Only cite sources that were actually collected and stored
+      7. Integrate expert predictions and betting information naturally
+      8. Use markdown formatting
+      9. Include a footnote stating: "This report is based on ${config.parameters.minSources}-${config.parameters.maxSources} carefully selected sources."
       
       The report should be comprehensive, well-structured, and properly cited.`,
       agent: writerAgent,
@@ -167,6 +183,7 @@ export class ResearchWorkflow {
       name: 'AI Research Team',
       agents: [plannerAgent, researchAgent, analystAgent, writerAgent],
       tasks: [planningTask, researchTask, analysisTask, writingTask],
+      logLevel: 'debug',
       inputs: {
         topic: config.topic,
         sessionId: config.sessionId,
@@ -176,28 +193,37 @@ export class ResearchWorkflow {
       insights: `
         Research Standards and Guidelines:
         
-        1. Source Quality Requirements:
+        1. Source Requirements:
+           - CRITICAL: Collect between ${config.parameters.minSources} and ${config.parameters.maxSources} sources total
+           - Track source count throughout the research process
+           - Stop collecting sources once ${config.parameters.maxSources} is reached
+           - Ensure at least ${config.parameters.minSources} high-quality sources are collected
+        
+        2. Source Quality Requirements:
            - Prioritize recent sources (within last 6 months for current events)
            - Use reputable news outlets, official statistics, and expert analysis
            - Verify information across multiple sources when possible
+           - Avoid duplicate or redundant sources
            
-        2. Research Coverage:
+        3. Research Coverage:
            - Always include multiple perspectives on controversial topics
            - Cover predictions, odds, statistics, and expert opinions
            - Look for both quantitative data and qualitative insights
+           - Balance breadth with the source count limits
            
-        3. Citation Standards:
+        4. Citation Standards:
            - Every claim must be backed by a source
            - Include publication date, author/organization, and URL
            - Never use generic citations like "Internal Research Data"
+           - Only cite sources that were actually stored in the database
            
-        4. Report Structure:
+        5. Report Structure:
            - Executive Summary: 2-3 paragraphs highlighting key findings
            - Key Findings: 3-5 bullet points with most important insights
            - Main Sections: Organized by theme with clear subheadings
            - References: Full citation list at the end
            
-        5. Writing Style:
+        6. Writing Style:
            - Professional, objective tone
            - Clear and concise language
            - Use data and statistics to support arguments
@@ -205,6 +231,8 @@ export class ResearchWorkflow {
            
         Current Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
         Session ID: ${config.sessionId}
+        Min Sources: ${config.parameters.minSources}
+        Max Sources: ${config.parameters.maxSources}
       `
     });
     

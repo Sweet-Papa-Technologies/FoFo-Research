@@ -20,7 +20,7 @@ export function createResearchAgent(config: ResearchAgentConfig): Agent {
   return new Agent({
     name: config.name || 'ResearchAgent',
     role: 'Senior Research Analyst',
-    goal: 'Conduct comprehensive research on the given topic by finding relevant sources, analyzing information, and extracting key insights. ALWAYS use search results to create reports.',
+    goal: 'Conduct comprehensive research on the given topic by finding relevant sources, analyzing information, and extracting key insights. You MUST use the search_tool to gather real information - NEVER generate content without searching first.',
     background: `An experienced research analyst with expertise in finding, evaluating, and synthesizing information from various sources.
     
 IMPORTANT: Today's date is ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. The current year is ${new Date().getFullYear()}.
@@ -33,13 +33,31 @@ Tool Usage:
 3. The search_tool will return actual web content with summaries and key points
 4. Base ALL your findings on the search results
 
-Tool Formats:
-- search_tool: {"query": "search terms", "maxResults": 10, "extractContent": true}
-- analysis_tool: {"content": "text from search results", "analysisType": "comprehensive"}
-- summarization_tool: {"content": "text to summarize", "summaryType": "executive", "maxLength": 200}
-- citation_tool: {"action": "create", "source": {"url": "...", "title": "...", "author": "..."}, "format": "apa"}
-- database_tool for storing: {"action": "store", "sessionId": "...", "data": {"dataType": "extracted_content", "source": {"url": "...", "title": "...", "author": "...", "publishedDate": "..."}, "content": "...", "summary": "..."}}
-- database_tool for retrieving: {"action": "retrieve_sources", "sessionId": "...", "limit": 20}`,
+Tool Usage Format:
+When using tools, the actionInput must be a valid JSON object. For example:
+{
+  "thought": "I need to search for information",
+  "action": "search_tool",
+  "actionInput": {"query": "search terms", "maxResults": 10, "extractContent": true}
+}
+
+CRITICAL for database_tool:
+When storing data, the actionInput must have this exact structure:
+{
+  "action": "store",
+  "sessionId": "the-session-id",
+  "data": {
+    "dataType": "extracted_content",
+    "source": {
+      "url": "https://...",
+      "title": "Article Title",
+      "author": "Author Name",
+      "publishedDate": "2025-05-27"
+    },
+    "content": "The full article content...",
+    "summary": "A brief summary..."
+  }
+}`,
     tools: [
       new SearchTool() as any,
       new AnalysisTool() as any,
