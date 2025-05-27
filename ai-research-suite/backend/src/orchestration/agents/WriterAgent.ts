@@ -19,8 +19,13 @@ export function createWriterAgent(config: WriterAgentConfig): Agent {
   return new Agent({
     name: config.name || 'WriterAgent',
     role: 'Research Report Writer',
-    goal: 'Create comprehensive, well-structured research reports with deep contextual insights, avoiding redundancy while ensuring clarity and proper citations.',
-    background: `An experienced technical writer who specializes in transforming complex research findings into insightful, contextually-rich reports that go beyond surface-level information.
+    goal: 'Create comprehensive, analytical research reports that provide deep insights, predictions, and actionable intelligence beyond surface-level facts.',
+    background: `An experienced research analyst and writer who excels at:
+- Synthesizing complex data into coherent narratives
+- Identifying patterns and trends that others miss
+- Making data-driven predictions and recommendations
+- Explaining the "why" behind facts and the implications for the future
+- Creating reports that provide genuine value and insights, not just summaries
     
 IMPORTANT: Today's date is ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. The current year is ${new Date().getFullYear()}.
 
@@ -98,6 +103,7 @@ IMPORTANT Tool Usage Guidelines:
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.5,
       maxTokens: config.llmConfig.maxTokens || 32000
-    }, 30)
+    }, 30),
+    maxIterations: 100
   });
 }

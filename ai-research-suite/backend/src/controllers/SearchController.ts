@@ -18,15 +18,15 @@ export class SearchController {
   
   async search(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
-      const { query, maxResults = 10, filters } = req.body;
+      const { query, maxResults = 51, filters, maxSources = 50 } = req.body;
       const userId = req.user?.id;
-      
+      const maxSourcesNum = maxResults === 51 ? maxSources : maxResults;
       logger.info(`Performing search: ${query}`);
       
       // Perform the search using KaibanJS SearchTool
       const searchParams = {
         query,
-        maxResults: Math.min(maxResults, 50), // Limit max results
+        maxResults: Math.min(maxSourcesNum, 50), // Limit max results
         language: filters?.language || 'en',
         timeRange: filters?.timeRange || '',
         extractContent: filters?.extractContent !== false // Default to true

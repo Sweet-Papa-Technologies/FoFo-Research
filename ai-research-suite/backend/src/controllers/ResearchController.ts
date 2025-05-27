@@ -40,7 +40,7 @@ export class ResearchController {
   async listResearch(req: AuthRequest, res: Response, next: NextFunction): Promise<void> {
     try {
       const userId = req.user?.id;
-      const { status, page = 1, limit = 20 } = req.query;
+      const { status, page = 1, limit = 50 } = req.query; //limit-change
       
       const sessions = await this.researchService.listUserSessions(
         userId || '',

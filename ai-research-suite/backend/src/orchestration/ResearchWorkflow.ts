@@ -132,19 +132,20 @@ export class ResearchWorkflow {
       Instructions:
       1. Note the total number of sources collected from the research summary
       2. Retrieve all stored research data using database_tool (limit: ${config.parameters.maxSources})
-      3. Analyze the content to identify:
-         - Key findings and insights
-         - Predictions from experts
-         - Betting odds and spreads
-         - Statistical trends
-         - Consensus opinions
-      4. Organize findings by theme
-      5. Identify the most credible sources
-      6. Note any conflicting information
-      7. Ensure your analysis covers all ${config.parameters.minSources}-${config.parameters.maxSources} sources collected
+      3. Perform DEEP ANALYSIS to extract:
+         - PATTERNS: What trends emerge across multiple sources?
+         - PREDICTIONS: Based on data, what are likely future outcomes?
+         - CONSENSUS vs OUTLIERS: Where do experts agree/disagree?
+         - QUANTITATIVE INSIGHTS: Statistics, percentages, measurable data
+         - CAUSATION: WHY are things happening, not just WHAT
+         - IMPLICATIONS: What does this mean for stakeholders?
+         - OPPORTUNITIES & RISKS: What should people watch for?
+      4. Synthesize findings into ACTIONABLE INTELLIGENCE
+      5. Identify knowledge gaps or areas needing more research
+      6. Provide confidence levels for predictions
+      7. Ensure analysis covers all ${config.parameters.minSources}-${config.parameters.maxSources} sources
       
-      Focus on providing actionable insights that can be used in the final report.
-      Include a source count verification in your output.`,
+      Your analysis should enable the writer to create a report that provides genuine strategic value, not just a summary of facts.`,
       agent: analystAgent,
       dependencies: ['research'],
       expectedOutput: 'Comprehensive analysis with key findings, patterns, insights, and source count verification'
@@ -162,19 +163,27 @@ export class ResearchWorkflow {
       CRITICAL REQUIREMENTS:
       1. Use database_tool to retrieve all source data (limit: ${config.parameters.maxSources})
       2. Verify you're using ${config.parameters.minSources}-${config.parameters.maxSources} sources total
-      3. Structure the report with:
-         - Executive Summary
-         - Key Findings (3-5 bullet points)
-         - Main sections with analysis
-         - References with proper citations
+      3. Structure the report with MANDATORY sections:
+         - ## Executive Summary (2-3 comprehensive paragraphs)
+         - ## Key Findings (5-8 numbered findings with bold titles)
+         - Main analytical sections that provide DEEP INSIGHTS
+         - ## References with proper citations
       4. NEVER cite "Internal Research Data"
       5. Include actual source citations (Organization, Date, Title, URL)
       6. Only cite sources that were actually collected and stored
-      7. Integrate expert predictions and betting information naturally
-      8. Use markdown formatting
-      9. Include a footnote stating: "This report is based on ${config.parameters.minSources}-${config.parameters.maxSources} carefully selected sources."
       
-      The report should be comprehensive, well-structured, and properly cited.`,
+      QUALITY GUIDELINES for a SUPERIOR report:
+      - GO BEYOND FACTS: Don't just report what happened - analyze WHY it matters
+      - PROVIDE PREDICTIONS: Based on data, what are likely outcomes?
+      - IDENTIFY TRENDS: What patterns emerge from the research?
+      - OFFER EXPERT SYNTHESIS: Combine multiple viewpoints into coherent insights
+      - ADDRESS CONTROVERSIES: If sources disagree, explain different perspectives
+      - QUANTIFY WHEN POSSIBLE: Use specific numbers, percentages, statistics
+      - CONTEXTUALIZE: How does this fit into the bigger picture?
+      
+      Report depth: ${config.parameters.reportLength}
+      Format: Markdown with proper heading hierarchy
+      Include footnote: "*This report is based on [X] carefully selected sources.*"`,
       agent: writerAgent,
       dependencies: ['analysis'],
       expectedOutput: 'Final formatted research report in markdown with proper citations',
@@ -425,11 +434,15 @@ export class ResearchWorkflow {
     const findingsText = keyFindingsMatch[1];
     const findings: string[] = [];
     
-    // Match numbered list items (1. 2. etc)
+    // Match numbered list items (1. 2. etc) - handle multi-line items and bold text
     const numberedMatches = findingsText.match(/^\d+\.\s+(.+?)(?=\n\d+\.|$)/gms);
     if (numberedMatches) {
       numberedMatches.forEach(match => {
-        const cleaned = match.replace(/^\d+\.\s+/, '').trim();
+        // Remove number prefix and clean up bold markdown
+        const cleaned = match.replace(/^\d+\.\s+/, '')
+          .replace(/\*\*(.*?)\*\*/g, '$1') // Remove bold markdown
+          .replace(/\[\d+(?:,\s*\d+)*\]/g, '') // Remove citations like [1, 2, 3]
+          .trim();
         if (cleaned) findings.push(cleaned);
       });
     }

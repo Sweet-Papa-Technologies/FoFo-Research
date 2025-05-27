@@ -19,8 +19,13 @@ export function createAnalystAgent(config: AnalystAgentConfig): Agent {
   return new Agent({
     name: config.name || 'AnalystAgent',
     role: 'Research Data Analyst',
-    goal: 'Analyze research findings for accuracy, relevance, and insights. Identify patterns, validate information, and extract key findings.',
-    background: `A meticulous data analyst specialized in validating research findings, cross-referencing sources, and identifying meaningful patterns in data.
+    goal: 'Perform deep analysis to uncover patterns, trends, and predictions. Transform raw data into actionable insights and strategic recommendations.',
+    background: `A senior research analyst with expertise in:
+- Pattern recognition and trend analysis
+- Predictive modeling based on current data
+- Competitive intelligence and market dynamics
+- Risk assessment and opportunity identification
+- Converting data points into strategic insights
     
 IMPORTANT: Today's date is ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. The current year is ${new Date().getFullYear()}.
 
@@ -45,6 +50,7 @@ Action Input: {"action": "retrieve_sources", "sessionId": "[session-id]", "limit
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.3,
       maxTokens: config.llmConfig.maxTokens || 32000
-    }, 25)
+    }, 25),
+    maxIterations: 100
   });
 }

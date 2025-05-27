@@ -11,8 +11,8 @@ const researchController = new ResearchController();
 const researchSchema = Joi.object({
   topic: Joi.string().min(3).max(500).required(),
   parameters: Joi.object({
-    maxSources: Joi.number().min(5).max(50).default(20),
-    minSources: Joi.number().min(3).max(20).default(5),
+    maxSources: Joi.number().min(5).max(500).default(20), //limit-change
+    minSources: Joi.number().min(3).max(200).default(5), //limit-change
     reportLength: Joi.string().valid('short', 'medium', 'long', 'comprehensive').default('medium'),
     allowedDomains: Joi.array().items(Joi.string().domain()).optional(),
     blockedDomains: Joi.array().items(Joi.string().domain()).optional(),

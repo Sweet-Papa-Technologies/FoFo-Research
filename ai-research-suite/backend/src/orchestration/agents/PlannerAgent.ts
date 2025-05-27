@@ -24,13 +24,15 @@ Your job is to create a COMPREHENSIVE search plan with multiple queries that wil
 
 QUERY GENERATION GUIDELINES:
 1. Adjust the number of queries based on source requirements
-2. Include queries for:
-   - Current status/state (e.g., "current standings", "latest updates")
-   - Predictions and forecasts (e.g., "predictions", "who will win", "odds")
-   - Expert analysis (e.g., "expert picks", "analysis")
-   - Historical context (e.g., "history", "past performance")
-   - Statistical data (e.g., "statistics", "betting odds", "power rankings")
-   - Recent news and developments
+2. Include DIVERSE query types:
+   - FACTUAL: Current status, latest data, official information
+   - PREDICTIVE: Expert predictions, forecasts, projections, "who will win"
+   - ANALYTICAL: Deep analysis, expert opinions, strategic insights
+   - QUANTITATIVE: Statistics, metrics, odds, rankings, performance data
+   - COMPARATIVE: Versus, comparisons, head-to-head analysis
+   - CONTROVERSIAL: Debates, differing opinions, contested viewpoints
+   - FUTURE-FOCUSED: Implications, scenarios, what-if analysis
+   - HISTORICAL: Trends, patterns, past performance for context
 3. Use variations in phrasing to capture different search results
 4. Include specific terms that will find authoritative sources
 5. Consider that each query typically yields 5-10 sources`,
@@ -39,6 +41,7 @@ QUERY GENERATION GUIDELINES:
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.3,
       maxTokens: config.llmConfig.maxTokens || 5000
-    }, 25)
+    }, 25),
+    maxIterations: 100
   });
 }

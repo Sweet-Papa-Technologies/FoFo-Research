@@ -72,6 +72,7 @@ IMPORTANT: You MUST store EVERY piece of content you extract from search results
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.7,
       maxTokens: config.llmConfig.maxTokens || 32000
-    }, 100)
+    }, 100),
+    maxIterations: 100
   });
 }

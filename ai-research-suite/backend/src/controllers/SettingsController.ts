@@ -32,7 +32,7 @@ export class SettingsController {
           user_id: userId,
           default_report_length: 'medium',
           default_language: 'en',
-          default_max_sources: 20,
+          default_max_sources: 200, //limit-change
           email_notifications: true,
           theme: 'auto',
           preferences: {},
