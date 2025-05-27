@@ -67,7 +67,7 @@ export class ResearchService {
           jobId: sessionId,
           removeOnComplete: false,
           removeOnFail: false,
-          timeout: 300000 // 5 minute timeout
+          timeout: 3000000 // 50 minute timeout
         });
         
         logger.info(`Research session ${sessionId} created and queued with job ID: ${job.id}`);

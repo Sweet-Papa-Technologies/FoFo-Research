@@ -2,6 +2,7 @@ import { Agent } from 'kaibanjs';
 import { ReportFormatterTool } from '../tools/ReportFormatterTool';
 import { CitationTool } from '../tools/CitationTool';
 import { SummarizationTool } from '../tools/SummarizationTool';
+import { DatabaseTool } from '../tools/DatabaseTool';
 import { createLLMConfig } from './AgentConfig';
 
 export interface WriterAgentConfig {
@@ -69,12 +70,25 @@ CRITICAL SOURCE CITATION REQUIREMENTS:
 5. Include inline citations [1], [2], etc. throughout the content
 6. ALL facts, predictions, and analysis MUST be attributed to specific sources
 7. Include expert predictions, betting odds, and statistical analysis from the sources
+
+DATABASE ACCESS INSTRUCTIONS:
+When you receive a session ID, you MUST first retrieve all research data:
+1. Use database_tool with action "retrieve_sources" to get all source content
+2. Use database_tool with action "get_summary" to see what searches were performed
+3. Use ONLY the sources retrieved from the database in your report
+4. Include ALL sources that were found - don't leave any out
+
+Example database retrieval:
+Action: database_tool
+Action Input: {"action": "retrieve_sources", "sessionId": "[session-id]", "limit": 50}
     
 IMPORTANT Tool Usage Guidelines:
+- database_tool: ALWAYS use this FIRST to retrieve all sources
 - report_formatter_tool: Use {"content": {"title": "...", "summary": "...", "sections": [...], "findings": [...], "citations": [...]}, "format": "markdown", "style": "academic"}
 - citation_tool for formatting: Use {"action": "format", "source": {"url": "...", "title": "...", "author": "...", "publishedDate": "..."}, "format": "apa"}
 - summarization_tool: Use {"content": "text to summarize", "summaryType": "executive", "maxLength": 200}`,
     tools: [
+      new DatabaseTool() as any,
       new ReportFormatterTool() as any,
       new CitationTool() as any,
       new SummarizationTool() as any

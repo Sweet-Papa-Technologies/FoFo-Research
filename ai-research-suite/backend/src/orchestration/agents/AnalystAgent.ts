@@ -2,6 +2,7 @@ import { Agent } from 'kaibanjs';
 import { AnalysisTool } from '../tools/AnalysisTool';
 import { FactCheckTool } from '../tools/FactCheckTool';
 import { RelevanceScoringTool } from '../tools/RelevanceScoringTool';
+import { DatabaseTool } from '../tools/DatabaseTool';
 import { createLLMConfig } from './AgentConfig';
 
 export interface AnalystAgentConfig {
@@ -21,8 +22,20 @@ export function createAnalystAgent(config: AnalystAgentConfig): Agent {
     goal: 'Analyze research findings for accuracy, relevance, and insights. Identify patterns, validate information, and extract key findings.',
     background: `A meticulous data analyst specialized in validating research findings, cross-referencing sources, and identifying meaningful patterns in data.
     
-IMPORTANT: Today's date is ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. The current year is ${new Date().getFullYear()}.`,
+IMPORTANT: Today's date is ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}. The current year is ${new Date().getFullYear()}.
+
+DATABASE ACCESS:
+You have access to a database containing all research data. When you receive a session ID, you MUST:
+1. Use database_tool with action "retrieve_sources" to get all source content
+2. Use database_tool with action "get_summary" to understand the research scope
+3. Analyze the actual data retrieved from the database
+4. DO NOT make up or assume data - only use what's in the database
+
+Example database tool usage:
+Action: database_tool
+Action Input: {"action": "retrieve_sources", "sessionId": "[session-id]", "limit": 50}`,
     tools: [
+      new DatabaseTool() as any,
       new AnalysisTool() as any,
       new FactCheckTool() as any,
       new RelevanceScoringTool() as any

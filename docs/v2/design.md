@@ -1896,7 +1896,7 @@ test.describe('Research Suite E2E', () => {
     
     // Wait for completion (with timeout)
     await page.waitForSelector('[data-test="research-complete"]', {
-      timeout: 300000 // 5 minutes
+      timeout: 3000000 // 50 minutes
     });
     
     // Verify report is displayed
