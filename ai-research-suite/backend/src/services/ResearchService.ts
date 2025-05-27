@@ -289,13 +289,20 @@ export class ResearchService {
   private async saveReport(sessionId: string, report: any): Promise<string> {
     const reportId = uuidv4();
     
+    // Ensure content is a string
+    let content = report.content;
+    if (typeof content !== 'string') {
+      logger.warn('Report content is not a string, converting:', typeof content);
+      content = JSON.stringify(content);
+    }
+    
     await this.db('reports').insert({
       id: reportId,
       session_id: sessionId,
-      content: report.content,
-      summary: report.summary,
-      key_findings: JSON.stringify(report.keyFindings),
-      word_count: report.content.split(/\s+/).length,
+      content: content,
+      summary: report.summary || '',
+      key_findings: JSON.stringify(report.keyFindings || []),
+      word_count: content.split(/\s+/).length,
       created_at: new Date()
     });
     

@@ -60,15 +60,22 @@ export class ResearchWorkflow {
     });
     
     const analysisTask = new Task({
-      description: 'Analyze the research findings and extract key insights',
+      description: `Analyze the research findings from the search results. 
+      Focus on the actual data found, not hypothetical information.
+      Extract key insights and patterns from the search results.
+      Use the output from the previous research task.`,
       agent: analystAgent,
-      expectedOutput: 'Detailed analysis with key findings and patterns'
+      expectedOutput: 'Detailed analysis with key findings and patterns based on search results'
     });
     
     const writingTask = new Task({
-      description: 'Create a well-structured report from the analysis',
+      description: `Create a well-structured report from the search results and analysis.
+      Use ONLY the information found in the search results from previous tasks.
+      Include all sources with proper citations.
+      Format: ${this.config.parameters.reportLength} report in markdown.
+      Base your report on the research findings and analysis from previous tasks.`,
       agent: writerAgent,
-      expectedOutput: 'Final formatted research report'
+      expectedOutput: 'Final formatted research report based on actual search findings'
     });
     
     logger.info('Creating team...');
@@ -98,12 +105,19 @@ export class ResearchWorkflow {
     ${parameters.allowedDomains ? `- Allowed domains: ${parameters.allowedDomains.join(', ')}` : ''}
     ${parameters.blockedDomains ? `- Blocked domains: ${parameters.blockedDomains.join(', ')}` : ''}
     
+    IMPORTANT: You MUST use the search_tool to find information. DO NOT generate content without searching.
+    
     Your task:
-    1. Search for relevant and authoritative sources
-    2. Analyze the information found
-    3. Extract key insights and findings
-    4. Ensure proper citation of all sources
-    5. Focus on accuracy and comprehensiveness
+    1. USE the search_tool with query: "${topic}" to find relevant sources
+    2. Search for at least ${parameters.minSources} different sources using variations of the search query
+    3. Analyze the actual search results and extracted content
+    4. Extract key insights and findings from the search results
+    5. Ensure proper citation of all sources found
+    6. Base your report ONLY on the information found through searches
+    
+    Example search tool usage:
+    Action: search_tool
+    Action Input: {"query": "${topic}", "maxResults": ${Math.min(parameters.maxSources, 10)}, "extractContent": true}
     `;
   }
   
@@ -123,6 +137,9 @@ export class ResearchWorkflow {
       // Execute the team workflow
       logger.info('Starting team workflow execution...');
       const result = await this.team.start();
+      
+      logger.info('Team workflow completed, processing results...');
+      logger.debug('Raw team result type:', typeof result);
       
       emitProgressUpdate({
         sessionId: this.config.sessionId,
@@ -186,18 +203,34 @@ export class ResearchWorkflow {
       content = content.slice(3, -3).trim();
     }
     
+    // Parse the content if it's a JSON string
+    let parsedContent = content;
+    try {
+      if (typeof content === 'string' && content.trim().startsWith('{')) {
+        const parsed = JSON.parse(content);
+        if (parsed.content) {
+          parsedContent = parsed.content;
+        }
+      }
+    } catch (e) {
+      // Content is not JSON, use as-is
+    }
+    
+    logger.debug('Parsed content type:', typeof parsedContent);
+    logger.debug('Content preview:', parsedContent ? parsedContent.substring(0, 200) : 'No content');
+
     return {
-      content: content,
-      summary: this.extractSummary(content),
-      keyFindings: this.extractKeyFindings(content),
-      sources: this.extractSources(content),
-      citations: this.extractCitations(content),
+      content: parsedContent,
+      summary: this.extractSummary(parsedContent),
+      keyFindings: this.extractKeyFindings(parsedContent),
+      sources: this.extractSources(parsedContent),
+      citations: this.extractCitations(parsedContent),
       metadata: {
         topic: this.config.topic,
         generatedAt: new Date().toISOString(),
         parameters: this.config.parameters,
         statistics: {
-          totalSources: this.extractSources(content).length,
+          totalSources: this.extractSources(parsedContent).length,
           analyzedSources: 0,
           searchQueries: 0,
           processingTime: Date.now() - new Date().getTime()

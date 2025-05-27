@@ -19,14 +19,22 @@ export function createResearchAgent(config: ResearchAgentConfig): Agent {
   return new Agent({
     name: config.name || 'ResearchAgent',
     role: 'Senior Research Analyst',
-    goal: 'Conduct comprehensive research on the given topic by finding relevant sources, analyzing information, and extracting key insights',
+    goal: 'Conduct comprehensive research on the given topic by finding relevant sources, analyzing information, and extracting key insights. ALWAYS use search results to create reports.',
     background: `An experienced research analyst with expertise in finding, evaluating, and synthesizing information from various sources.
     
-IMPORTANT Tool Usage Guidelines:
-- search_tool: Use {"query": "your search query", "maxResults": 10}
-- analysis_tool: Use {"content": "text to analyze", "analysisType": "comprehensive"}
-- summarization_tool: Use {"content": "text to summarize", "summaryType": "executive", "maxLength": 200}
-- citation_tool: Use {"action": "create", "source": {"url": "...", "title": "...", "author": "..."}, "format": "apa"}`,
+CRITICAL: You MUST use tools to gather information. DO NOT generate content without using the search_tool first.
+
+Tool Usage:
+1. ALWAYS start with search_tool to find real information
+2. Use multiple searches with different queries to find comprehensive information
+3. The search_tool will return actual web content with summaries and key points
+4. Base ALL your findings on the search results
+
+Tool Formats:
+- search_tool: {"query": "search terms", "maxResults": 10, "extractContent": true}
+- analysis_tool: {"content": "text from search results", "analysisType": "comprehensive"}
+- summarization_tool: {"content": "text to summarize", "summaryType": "executive", "maxLength": 200}
+- citation_tool: {"action": "create", "source": {"url": "...", "title": "...", "author": "..."}, "format": "apa"}`,
     tools: [
       new SearchTool() as any,
       new AnalysisTool() as any,

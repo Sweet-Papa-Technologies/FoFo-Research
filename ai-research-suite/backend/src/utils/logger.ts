@@ -12,7 +12,30 @@ const consoleFormat = winston.format.combine(
   winston.format.colorize(),
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.printf(({ timestamp, level, message, ...meta }) => {
-    const metaString = Object.keys(meta).length ? ` ${JSON.stringify(meta)}` : '';
+    let metaString = '';
+    if (Object.keys(meta).length) {
+      try {
+        metaString = ` ${JSON.stringify(meta, (key, value) => {
+          // Handle circular references
+          if (value instanceof Error) {
+            return {
+              message: value.message,
+              stack: value.stack,
+              name: value.name
+            };
+          }
+          // Avoid circular references in objects
+          if (typeof value === 'object' && value !== null) {
+            if (key === 'config' || key === 'request' || key === 'response') {
+              return '[Circular Reference Omitted]';
+            }
+          }
+          return value;
+        })}`;
+      } catch (err) {
+        metaString = ` [Error serializing metadata: ${err instanceof Error ? err.message : 'Unknown error'}]`;
+      }
+    }
     return `${timestamp} [${level}]: ${message}${metaString}`;
   })
 );

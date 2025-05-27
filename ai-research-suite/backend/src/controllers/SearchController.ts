@@ -28,7 +28,8 @@ export class SearchController {
         query,
         maxResults: Math.min(maxResults, 50), // Limit max results
         language: filters?.language || 'en',
-        timeRange: filters?.timeRange || ''
+        timeRange: filters?.timeRange || '',
+        extractContent: filters?.extractContent !== false // Default to true
       };
       
       const searchResult = await this.searchTool._call(searchParams);
