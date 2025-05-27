@@ -1,13 +1,10 @@
 import { Team, Task } from 'kaibanjs';
 import { createPlannerAgent } from './agents/PlannerAgent';
-// import { createResearchAgent } from './agents/ResearchAgent';
+import { createResearchAgent } from './agents/ResearchAgent';
 import { createAnalystAgent } from './agents/AnalystAgent';
 import { createWriterAgent } from './agents/WriterAgent';
-import { ResearchDataService } from '../services/ResearchDataService';
-import { SearchTool } from './tools/SearchTool';
 import { logger } from '../utils/logger';
 import { emitProgressUpdate, emitStatusChange } from '../utils/websocket';
-import { DeduplicationService } from '../services/DeduplicationService';
 
 export interface WorkflowConfig {
   sessionId: string;
@@ -31,27 +28,23 @@ export interface WorkflowConfig {
 }
 
 export class ResearchWorkflow {
-  private team: Team;
   private config: WorkflowConfig;
-  private dataService: ResearchDataService;
-  private searchTool: SearchTool;
+  private team: Team;
   
   constructor(config: WorkflowConfig) {
     this.config = config;
-    this.dataService = new ResearchDataService();
-    this.searchTool = new SearchTool();
     
-    // logger.info('Creating planner agent...');
-    // const plannerAgent = createPlannerAgent({
-    //   name: 'Query Planner',
-    //   llmConfig: config.llmConfig
-    // });
+    logger.info('Creating planner agent...');
+    const plannerAgent = createPlannerAgent({
+      name: 'Query Planner',
+      llmConfig: config.llmConfig
+    });
     
-    // logger.info('Creating research agent...');
-    // const researchAgent = createResearchAgent({
-    //   name: 'Primary Researcher',
-    //   llmConfig: config.llmConfig
-    // });
+    logger.info('Creating research agent...');
+    const researchAgent = createResearchAgent({
+      name: 'Primary Researcher',
+      llmConfig: config.llmConfig
+    });
     
     logger.info('Creating analyst agent...');
     const analystAgent = createAnalystAgent({
@@ -66,82 +59,182 @@ export class ResearchWorkflow {
     });
     
     logger.info('Creating tasks...');
-    // Note: Planning and research are handled separately, not as KaibanJS tasks
     
-    const analysisTask = new Task({
-      description: `Analyze the research findings stored in the database.
-      Session ID: ${config.sessionId}
-      Retrieve and analyze all research data to extract key insights.
-      Focus on patterns, predictions, and expert opinions found in the sources.`,
-      agent: analystAgent,
-      expectedOutput: 'Comprehensive analysis with key findings and patterns'
+    // Task 1: Planning - Generate multiple search queries
+    const planningTask = new Task({
+      referenceId: 'planning',
+      description: `Create a comprehensive search strategy for the topic: ${config.topic}
+      
+      Requirements:
+      - Generate 5-10 specific search queries
+      - Each query should target different aspects of the topic
+      - Include queries for predictions, betting odds, expert analysis, and statistics
+      - Output format: JSON array with objects containing: query, priority (1-5), purpose
+      
+      Example output:
+      {
+        "queries": [
+          {"query": "Lakers vs Celtics predictions expert analysis 2024", "priority": 1, "purpose": "Expert predictions"},
+          {"query": "Lakers Celtics betting odds spread moneyline", "priority": 2, "purpose": "Betting information"},
+          {"query": "Lakers vs Celtics head to head statistics recent games", "priority": 3, "purpose": "Historical data"}
+        ]
+      }`,
+      agent: plannerAgent,
+      expectedOutput: 'JSON array of search queries with priorities and purposes'
     });
     
-    const writingTask = new Task({
-      description: `Create a well-structured report using data from the database.
+    // Task 2: Research - Execute searches and store results
+    const researchTask = new Task({
+      referenceId: 'research',
+      description: `Execute the search queries from planning: {taskResult:planning}
+      
       Session ID: ${config.sessionId}
       
-      CRITICAL REQUIREMENTS:
-      1. Retrieve all source data from the database for this session
-      2. Include ALL sources with proper citations (Organization, Date, Title, URL)
-      3. NEVER cite "Internal Research Data" - use the actual sources stored in database
-      4. Include expert predictions, betting odds, and statistical analysis
-      5. Format: ${this.config.parameters.reportLength} report in markdown
+      Instructions:
+      1. Parse the queries from the planning task
+      2. Execute each search query using the search_tool
+      3. For each search result:
+         - Extract and store the content using database_tool
+         - Include source metadata (title, URL, date, organization)
+      4. Store at least ${config.parameters.minSources} sources total
+      5. Focus on high-quality, recent sources
+      6. Process queries in priority order
       
-      The database contains all the search results and extracted content.
-      Base your report on the comprehensive data available in the database.`,
+      Database storage format:
+      - dataType: 'search_results' for raw results
+      - dataType: 'extracted_content' for article content
+      
+      Return a summary of sources found and stored.`,
+      agent: researchAgent,
+      dependencies: ['planning'],
+      expectedOutput: 'Summary of research data collected and stored in database'
+    });
+    
+    // Task 3: Analysis - Analyze the collected data
+    const analysisTask = new Task({
+      referenceId: 'analysis',
+      description: `Analyze all research data stored in the database.
+      
+      Session ID: ${config.sessionId}
+      
+      Instructions:
+      1. Retrieve all stored research data using database_tool
+      2. Analyze the content to identify:
+         - Key findings and insights
+         - Predictions from experts
+         - Betting odds and spreads
+         - Statistical trends
+         - Consensus opinions
+      3. Organize findings by theme
+      4. Identify the most credible sources
+      5. Note any conflicting information
+      
+      Focus on providing actionable insights that can be used in the final report.`,
+      agent: analystAgent,
+      dependencies: ['research'],
+      expectedOutput: 'Comprehensive analysis with key findings, patterns, and insights'
+    });
+    
+    // Task 4: Writing - Create the final report
+    const writingTask = new Task({
+      referenceId: 'writing',
+      description: `Create a ${config.parameters.reportLength} research report.
+      
+      Session ID: ${config.sessionId}
+      Analysis findings: {taskResult:analysis}
+      
+      CRITICAL REQUIREMENTS:
+      1. Use database_tool to retrieve all source data
+      2. Structure the report with:
+         - Executive Summary
+         - Key Findings (3-5 bullet points)
+         - Main sections with analysis
+         - References with proper citations
+      3. NEVER cite "Internal Research Data"
+      4. Include actual source citations (Organization, Date, Title, URL)
+      5. Integrate expert predictions and betting information naturally
+      6. Use markdown formatting
+      
+      The report should be comprehensive, well-structured, and properly cited.`,
       agent: writerAgent,
-      expectedOutput: 'Final formatted research report with proper citations'
+      dependencies: ['analysis'],
+      expectedOutput: 'Final formatted research report in markdown with proper citations'
     });
     
     logger.info('Creating team...');
-    // Create team without planner - we'll handle planning separately
     this.team = new Team({
-      name: 'Research Team',
-      agents: [analystAgent, writerAgent],
-      tasks: [analysisTask, writingTask],
+      name: 'AI Research Team',
+      agents: [plannerAgent, researchAgent, analystAgent, writerAgent],
+      tasks: [planningTask, researchTask, analysisTask, writingTask],
       inputs: {
         topic: config.topic,
-        parameters: config.parameters,
-        sessionId: config.sessionId
+        sessionId: config.sessionId,
+        parameters: config.parameters
       }
     });
     
-    logger.info('ResearchWorkflow constructor completed');
+    // Set up workflow monitoring
+    this.setupWorkflowMonitoring();
   }
-
-  private createPlanningPrompt(): string {
-    const { topic, parameters } = this.config;
-    const currentDate = new Date();
-    return `
-    Today's date is ${currentDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}.
-    The current year is ${currentDate.getFullYear()}.
+  
+  private setupWorkflowMonitoring(): void {
+    // Monitor workflow status changes
+    this.team.onWorkflowStatusChange((status) => {
+      logger.info(`Workflow status changed to: ${status}`);
+      
+      const statusMap: Record<string, string> = {
+        'INITIAL': 'initialized',
+        'RUNNING': 'processing',
+        'FINISHED': 'completed',
+        'ERRORED': 'failed',
+        'STOPPED': 'stopped',
+        'BLOCKED': 'blocked'
+      };
+      
+      emitStatusChange({
+        sessionId: this.config.sessionId,
+        status: (statusMap[status] || 'processing') as 'pending' | 'processing' | 'completed' | 'failed',
+        message: `Workflow ${status.toLowerCase()}`
+      });
+    });
     
-    Generate a comprehensive search plan for researching: ${topic}
-    
-    Create 5-10 different search queries that will provide thorough coverage of this topic.
-    Consider different angles, time periods, and information types.
-    
-    Target ${parameters.minSources}-${parameters.maxSources} total sources across all queries.
-    Depth level: ${parameters.depth}
-    
-    Your search queries should cover:
-    - Current status and latest updates
-    - Predictions and forecasts
-    - Expert opinions and analysis
-    - Statistical data and odds (if applicable)
-    - Historical context and trends
-    - Recent news and developments
-    
-    Output a JSON array with your search strategy.
-    `;
+    // Monitor task progress
+    const teamStore = this.team.useStore();
+    teamStore.subscribe(() => {
+      const state = teamStore.getState();
+      const tasks = state.tasks;
+      
+      const completedTasks = tasks.filter((t: any) => t.status === 'DONE').length;
+      const totalTasks = tasks.length;
+      const percentage = Math.round((completedTasks / totalTasks) * 100);
+      
+      const currentTask = tasks.find((t: any) => t.status === 'DOING');
+      const phaseMap: Record<string, string> = {
+        'planning': 'planning',
+        'research': 'researching',
+        'analysis': 'analyzing',
+        'writing': 'writing'
+      };
+      
+      emitProgressUpdate({
+        sessionId: this.config.sessionId,
+        progress: {
+          percentage,
+          currentPhase: currentTask ? phaseMap[currentTask.id] || 'processing' : 'completed',
+          phasesCompleted: tasks
+            .filter((t: any) => t.status === 'DONE')
+            .map((t: any) => phaseMap[t.id] || t.id),
+          estimatedTimeRemaining: (totalTasks - completedTasks) * 45
+        }
+      });
+    });
   }
   
   async execute(): Promise<any> {
     try {
       logger.info(`Starting research workflow for topic: ${this.config.topic}`);
       logger.info(`Session ID: ${this.config.sessionId}`);
-      logger.info(`LLM Config: Provider=${this.config.llmConfig.provider}, Model=${this.config.llmConfig.model}, BaseURL=${this.config.llmConfig.baseUrl}`);
+      logger.info(`LLM Config: Provider=${this.config.llmConfig.provider}, Model=${this.config.llmConfig.model}`);
       
       emitStatusChange({
         sessionId: this.config.sessionId,
@@ -149,87 +242,11 @@ export class ResearchWorkflow {
         message: 'Research workflow started'
       });
       
-      // Phase 1: Planning
-      emitProgressUpdate({
-        sessionId: this.config.sessionId,
-        progress: {
-          percentage: 10,
-          currentPhase: 'planning',
-          phasesCompleted: [],
-          estimatedTimeRemaining: 180
-        }
-      });
-      
-      logger.info('Initializing KaibanJS team...');
-      
-      // Override the research task to intercept planning results
-      const originalTeam = this.team;
-      
-      // Execute planning first
-      logger.info('Starting planning phase...');
-      let planningResult;
-      try {
-        planningResult = await this.executePlanning();
-        logger.info('Planning result:', JSON.stringify(planningResult));
-      } catch (planError) {
-        logger.error('Failed to execute planning:', planError);
-        // Use fallback single query
-        planningResult = {
-          queries: [
-            { query: this.config.topic, priority: 1, purpose: 'Main topic research' }
-          ]
-        };
-      }
-      
-      if (planningResult && planningResult.queries) {
-        // Phase 2: Execute searches in parallel
-        emitProgressUpdate({
-          sessionId: this.config.sessionId,
-          progress: {
-            percentage: 30,
-            currentPhase: 'researching',
-            phasesCompleted: ['planning'],
-            estimatedTimeRemaining: 150
-          }
-        });
-        
-        await this.executeParallelSearches(planningResult.queries);
-      } else {
-        logger.error('No queries returned from planning phase');
-      }
-      
-      // Phase 3: Continue with analysis and writing
-      emitProgressUpdate({
-        sessionId: this.config.sessionId,
-        progress: {
-          percentage: 60,
-          currentPhase: 'analyzing',
-          phasesCompleted: ['planning', 'researching'],
-          estimatedTimeRemaining: 90
-        }
-      });
-      
-      // Execute the rest of the workflow
+      // Start the KaibanJS team workflow
       logger.info('Starting team workflow execution...');
-      const result = await originalTeam.start();
+      const result = await this.team.start();
       
-      logger.info('Team workflow completed, processing results...');
-      
-      emitProgressUpdate({
-        sessionId: this.config.sessionId,
-        progress: {
-          percentage: 100,
-          currentPhase: 'completed',
-          phasesCompleted: ['planning', 'researching', 'analyzing', 'writing'],
-          estimatedTimeRemaining: 0
-        }
-      });
-      
-      emitStatusChange({
-        sessionId: this.config.sessionId,
-        status: 'completed',
-        message: 'Research workflow completed successfully'
-      });
+      logger.info('Team workflow completed');
       
       // Process and format the results
       return this.processResults(result);
@@ -245,427 +262,105 @@ export class ResearchWorkflow {
     }
   }
   
-  private async executePlanning(): Promise<any> {
+  private processResults(result: any): any {
     try {
-      // Create a temporary team with just the planner
-      const plannerAgent = createPlannerAgent({
-        name: 'Query Planner',
-        llmConfig: this.config.llmConfig
-      });
+      logger.info('Processing workflow results');
       
-      const planningTask = new Task({
-        description: this.createPlanningPrompt(),
-        agent: plannerAgent,
-        expectedOutput: 'JSON array of search queries with priorities'
-      });
+      // Get the final result from the writing task
+      const teamStore = this.team.useStore();
+      const tasks = teamStore.getState().tasks;
+      const writingTaskResult = tasks.find((t: any) => t.id === 'writing')?.result;
       
-      const planningTeam = new Team({
-        name: 'Planning Team',
-        agents: [plannerAgent],
-        tasks: [planningTask],
-        inputs: {
-          topic: this.config.topic,
-          parameters: this.config.parameters
-        }
-      });
-      
-      const result = await planningTeam.start();
-      logger.info('Planning team raw result:', result);
-      
-      // Parse the result to get queries
-      if (typeof result === 'string') {
-        try {
-          const parsed = JSON.parse(result);
-          return parsed;
-        } catch (e) {
-          // Try to extract JSON from the string
-          const jsonMatch = (result as string).match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            return JSON.parse(jsonMatch[0]);
-          }
-        }
+      if (!writingTaskResult) {
+        logger.error('No writing task result found');
+        return {
+          report: '# Research Report\n\nNo report content was generated.',
+          summary: 'No summary available',
+          keyFindings: []
+        };
       }
       
-      return result;
-    } catch (error) {
-      logger.error('Planning phase error:', error);
-      // Fallback to single query
+      // Parse the report content
+      let report: string = '';
+      
+      if (typeof writingTaskResult === 'string') {
+        report = writingTaskResult;
+      } else if (writingTaskResult && typeof writingTaskResult === 'object') {
+        if (typeof writingTaskResult.content === 'string') {
+          report = writingTaskResult.content;
+        } else if (typeof writingTaskResult.report === 'string') {
+          report = writingTaskResult.report;
+        } else {
+          report = JSON.stringify(writingTaskResult);
+        }
+      } else {
+        report = String(writingTaskResult);
+      }
+      
       return {
-        queries: [
-          { query: this.config.topic, priority: 1, purpose: 'Main topic research' }
-        ]
+        report,
+        summary: this.extractSummary(report),
+        keyFindings: this.extractKeyFindings(report)
+      };
+      
+    } catch (error) {
+      logger.error('Error processing results:', error);
+      return {
+        report: result?.result || result || 'No report generated',
+        summary: 'Unable to extract summary',
+        keyFindings: []
       };
     }
   }
   
-  private async executeParallelSearches(queries: Array<{query: string, priority: number, purpose: string}>): Promise<void> {
-    try {
-      logger.info(`Executing ${queries.length} search queries in parallel...`);
-      
-      // Sort by priority
-      const sortedQueries = queries.sort((a, b) => a.priority - b.priority);
-      
-      // Store queries in database and get their IDs
-      const storedQueries = [];
-      for (const query of sortedQueries) {
-        const id = await this.dataService.storeResearchQuery({
-          sessionId: this.config.sessionId,
-          query: query.query,
-          priority: query.priority,
-          status: 'pending'
-        });
-        storedQueries.push({ ...query, id });
-      }
-      
-      // Process queries in batches of 2
-      const batchSize = 2;
-      for (let i = 0; i < storedQueries.length; i += batchSize) {
-        const batch = storedQueries.slice(i, i + batchSize);
-        
-        await Promise.all(batch.map(async (queryInfo) => {
-          try {
-            // Update status
-            await this.dataService.updateQueryStatus(queryInfo.id, 'processing');
-            
-            // Execute search
-            const searchResults = await this.searchTool._call({
-              query: queryInfo.query,
-              maxResults: Math.min(Math.floor(this.config.parameters.maxSources / queries.length), 5),
-              language: this.config.parameters.language || 'en',
-              timeRange: this.config.parameters.dateRange || '1y',
-              extractContent: true
-            });
-            
-            // Parse results
-            const results = JSON.parse(searchResults);
-            
-            // Store search results
-            if (results.results) {
-              for (const result of results.results) {
-                await this.dataService.storeResearchData({
-                  sessionId: this.config.sessionId,
-                  dataType: 'search_results',
-                  query: queryInfo.query,
-                  title: result.title,
-                  content: JSON.stringify(result),
-                  metadata: {
-                    url: result.link,
-                    snippet: result.snippet,
-                    purpose: queryInfo.purpose
-                  },
-                  relevanceScore: 90
-                });
-                
-                // Store extracted content if available
-                if (result.extractedContent) {
-                  const contentId = await this.dataService.storeResearchData({
-                    sessionId: this.config.sessionId,
-                    dataType: 'source_content',
-                    query: queryInfo.query,
-                    title: result.title,
-                    content: result.extractedContent.content || result.extractedContent.summary,
-                    metadata: {
-                      url: result.link,
-                      publishedDate: result.extractedContent.publishedDate,
-                      author: result.extractedContent.author
-                    },
-                    relevanceScore: 95
-                  });
-                  logger.info(`Stored source content ${contentId} for ${result.title}`);
-                }
-              }
-            }
-            
-            // Update query status
-            await this.dataService.updateQueryStatus(queryInfo.id, 'completed', {
-              resultsCount: results.results?.length || 0
-            });
-            
-          } catch (error) {
-            logger.error(`Error processing query "${queryInfo.query}":`, error);
-            await this.dataService.updateQueryStatus(queryInfo.id, 'failed');
-          }
-        }));
-        
-        // Small delay between batches
-        if (i + batchSize < sortedQueries.length) {
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-      
-      logger.info('All searches completed and stored in database');
-      
-      // Log summary of what was stored
-      try {
-        const summary = await this.dataService.getResearchSummary(this.config.sessionId);
-        logger.info(`Database summary - Total sources: ${summary.totalSources}, Queries: ${summary.searchQueries.length}`);
-        if (summary.totalSources === 0) {
-          logger.error('WARNING: No sources were stored in the database despite search completion!');
-        }
-      } catch (summaryError) {
-        logger.error('Failed to get research summary:', summaryError);
-      }
-      
-    } catch (error) {
-      logger.error('Parallel search execution error:', error);
-      throw error;
+  private extractSummary(report: string): string {
+    // Look for Executive Summary section
+    const execSummaryMatch = report.match(/## Executive Summary\s*\n([\s\S]*?)(?=\n##|$)/i);
+    if (execSummaryMatch && execSummaryMatch[1]) {
+      return execSummaryMatch[1].trim();
     }
+    
+    // Look for Introduction section
+    const introMatch = report.match(/## Introduction\s*\n([\s\S]*?)(?=\n##|$)/i);
+    if (introMatch && introMatch[1]) {
+      return introMatch[1].trim();
+    }
+    
+    // Fallback to first paragraph
+    const firstParagraph = report.split('\n\n')[1];
+    return firstParagraph || 'No summary available';
   }
   
-  private processResults(result: any): any {
-    // KaibanJS returns the final output directly as a string
-    let content = '';
-    let reportOutput = '';
-    
-    if (typeof result === 'string') {
-      // Direct string output from the workflow
-      content = result;
-      reportOutput = result;
-    } else if (result && typeof result === 'object') {
-      // Check various possible locations for the output
-      if (result.output) {
-        content = result.output;
-        reportOutput = result.output;
-      } else if (result.result) {
-        content = result.result;
-        reportOutput = result.result;
-      } else if (result.tasks && Array.isArray(result.tasks)) {
-        // Legacy format with task array
-        const taskResults = result.tasks;
-        reportOutput = taskResults[2]?.output || taskResults[taskResults.length - 1]?.output || '';
-        content = reportOutput;
-      }
+  private extractKeyFindings(report: string): string[] {
+    // Look for Key Findings section
+    const keyFindingsMatch = report.match(/## Key Findings\s*\n([\s\S]*?)(?=\n##|$)/i);
+    if (!keyFindingsMatch || !keyFindingsMatch[1]) {
+      return [];
     }
     
-    // Clean up markdown code blocks if present
-    if (content.startsWith('```markdown') && content.endsWith('```')) {
-      content = content.slice(11, -3).trim();
-    } else if (content.startsWith('```') && content.endsWith('```')) {
-      content = content.slice(3, -3).trim();
-    }
+    const findingsText = keyFindingsMatch[1];
+    const findings: string[] = [];
     
-    // Parse the content if it's a JSON string
-    let parsedContent = content;
-    try {
-      if (typeof content === 'string' && content.trim().startsWith('{')) {
-        const parsed = JSON.parse(content);
-        if (parsed.content) {
-          parsedContent = parsed.content;
-        }
-      }
-    } catch (e) {
-      // Content is not JSON, use as-is
-    }
-    
-    logger.debug('Parsed content type:', typeof parsedContent);
-    logger.debug('Content preview:', parsedContent ? parsedContent.substring(0, 200) : 'No content');
-
-    // Apply deduplication to remove redundant content
-    const deduplicationService = DeduplicationService.getInstance();
-    const deduplicatedContent = deduplicationService.consolidateFindings(parsedContent);
-    const finalContent = deduplicationService.mergeSimilarContent(deduplicatedContent);
-
-    return {
-      content: finalContent,
-      summary: this.extractSummary(finalContent),
-      keyFindings: this.extractKeyFindings(finalContent),
-      sources: this.extractSources(finalContent),
-      citations: this.extractCitations(finalContent),
-      metadata: {
-        topic: this.config.topic,
-        generatedAt: new Date().toISOString(),
-        parameters: this.config.parameters,
-        statistics: {
-          totalSources: this.extractSources(finalContent).length,
-          analyzedSources: 0,
-          searchQueries: 0,
-          processingTime: Date.now() - new Date().getTime()
-        }
-      }
-    };
-  }
-  
-  private extractSources(output: any): any[] {
-    // Extract sources from the research output
-    if (!output) return [];
-    
-    if (typeof output === 'string') {
-      // Parse sources from string output
-      const sourcePattern = /\[([^\]]+)\]\(([^)]+)\)/g;
-      const sources: any[] = [];
-      let match;
-      
-      while ((match = sourcePattern.exec(output)) !== null) {
-        sources.push({
-          title: match[1],
-          url: match[2]
-        });
-      }
-      
-      return sources;
-    }
-    
-    return output.sources || [];
-  }
-  
-  private extractSummary(report: any): string {
-    if (!report) return '';
-    
-    if (typeof report === 'string') {
-      // Try to extract Executive Summary section
-      const summaryMatch = report.match(/##\s*Executive Summary\s*\n+([^#]+)/i);
-      if (summaryMatch) {
-        // Get all text until the next section header
-        const summaryText = summaryMatch[1].trim();
-        // Remove any table of contents or navigation elements
-        const cleanSummary = summaryText
-          .split('\n')
-          .filter(line => !line.match(/^\d+\.\s*\[.*\]\(#.*\)$/)) // Remove TOC entries
-          .join('\n')
-          .trim();
-        
-        if (cleanSummary) return cleanSummary;
-      }
-      
-      // Try to extract Introduction section - handle both plain and titled formats
-      const introMatch = report.match(/##\s*Introduction(?:\s*:\s*[^\n]+)?\s*\n+([^#]+)/i);
-      if (introMatch) {
-        const introText = introMatch[1].trim();
-        // Remove any table of contents entries
-        const cleanIntro = introText
-          .split('\n')
-          .filter(line => !line.match(/^\d+\.\s*\[.*\]\(#.*\)$/))
-          .join('\n')
-          .trim();
-        
-        if (cleanIntro) {
-          // For Introduction sections, use the full content as summary
-          // since it typically contains the overview
-          return cleanIntro;
-        }
-      }
-      
-      // If no Executive Summary or Introduction, get first content section after title
-      // Look for the first section that's not Key Findings
-      const titleMatch = report.match(/^#\s+[^\n]+\n/);
-      const afterTitle = titleMatch ? report.substring(titleMatch.index! + titleMatch[0].length) : report;
-      
-      // Find first section that's not Key Findings
-      const sectionMatch = afterTitle.match(/##\s+(?!Key Findings)([^\n]+)\n+([^#]+)/);
-      if (sectionMatch) {
-        const sectionContent = sectionMatch[2].trim();
-        // Get first meaningful paragraph
-        const paragraphs = sectionContent.split('\n\n').filter(p => p.trim());
-        for (const paragraph of paragraphs) {
-          // Skip if it's a list or reference
-          if (!paragraph.match(/^[\d\[\*\-]/) && paragraph.length > 50) {
-            return paragraph.trim();
-          }
-        }
-      }
-      
-      return 'No summary available';
-    }
-    
-    return report.summary || '';
-  }
-  
-  private extractKeyFindings(report: any): string[] {
-    if (!report) return [];
-    
-    if (typeof report === 'string') {
-      const findings: string[] = [];
-      
-      // Look for Key Findings section with our standardized format
-      const keyFindingsMatch = report.match(/##\s*Key Findings\s*\n+([^#]+)/i);
-      if (keyFindingsMatch) {
-        const findingsText = keyFindingsMatch[1].trim();
-        
-        // Extract numbered findings with format: "1. **Finding Title:** Description [references]"
-        // Split by line numbers to handle multi-line findings
-        const lines = findingsText.split('\n');
-        let currentFinding = '';
-        
-        for (const line of lines) {
-          // Check if this line starts a new numbered finding
-          if (/^\d+\.\s*\*\*/.test(line)) {
-            // Save previous finding if exists
-            if (currentFinding) {
-              findings.push(currentFinding.trim());
-            }
-            // Start new finding
-            currentFinding = line;
-          } else if (currentFinding && line.trim()) {
-            // Continue current finding (for multi-line findings)
-            currentFinding += ' ' + line.trim();
-          }
-        }
-        
-        // Don't forget the last finding
-        if (currentFinding) {
-          findings.push(currentFinding.trim());
-        }
-      }
-      
-      return findings;
-    }
-    
-    // Handle structured data
-    if (report.keyFindings) {
-      return Array.isArray(report.keyFindings) 
-        ? report.keyFindings 
-        : [report.keyFindings];
-    }
-    
-    return [];
-  }
-  
-  private extractCitations(report: any): any[] {
-    if (!report) return [];
-    
-    if (typeof report === 'string') {
-      const citations: Array<{ id: string; text: string; url?: string }> = [];
-      
-      // Look for References section
-      const referencesMatch = report.match(/##\s*References\s*\n+([^#]+)$/i);
-      if (referencesMatch) {
-        const referencesText = referencesMatch[1].trim();
-        
-        // Match numbered references like [1] Author et al. (2024)
-        const numberedRefs = referencesText.match(/\[(\d+)\]\s*([^\n]+)/g);
-        if (numberedRefs) {
-          numberedRefs.forEach(ref => {
-            const match = ref.match(/\[(\d+)\]\s*(.+)/);
-            if (match) {
-              citations.push({
-                id: `cite-${match[1]}`,
-                text: match[2].trim()
-              });
-            }
-          });
-        }
-      }
-      
-      // Also look for inline citations with links
-      const inlineCitations = report.match(/\[([^\]]+)\]\(([^)]+)\)/g) || [];
-      inlineCitations.forEach((match: string, index: number) => {
-        const parts = match.match(/\[([^\]]+)\]\(([^)]+)\)/);
-        if (parts && parts[2].startsWith('http')) {
-          citations.push({
-            id: `cite-inline-${index + 1}`,
-            text: parts[1],
-            url: parts[2]
-          });
-        }
+    // Match numbered list items (1. 2. etc)
+    const numberedMatches = findingsText.match(/^\d+\.\s+(.+?)(?=\n\d+\.|$)/gms);
+    if (numberedMatches) {
+      numberedMatches.forEach(match => {
+        const cleaned = match.replace(/^\d+\.\s+/, '').trim();
+        if (cleaned) findings.push(cleaned);
       });
-      
-      return citations;
     }
     
-    if (report.citations) {
-      return report.citations;
+    // Match bullet points
+    if (findings.length === 0) {
+      const bulletMatches = findingsText.match(/^[\*\-]\s+(.+?)(?=\n[\*\-]|$)/gms);
+      if (bulletMatches) {
+        bulletMatches.forEach(match => {
+          const cleaned = match.replace(/^[\*\-]\s+/, '').trim();
+          if (cleaned) findings.push(cleaned);
+        });
+      }
     }
     
-    return [];
+    return findings.slice(0, 5); // Return top 5 findings
   }
 }

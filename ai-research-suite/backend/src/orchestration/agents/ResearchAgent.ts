@@ -3,6 +3,7 @@ import { SearchTool } from '../tools/SearchTool';
 import { AnalysisTool } from '../tools/AnalysisTool';
 import { SummarizationTool } from '../tools/SummarizationTool';
 import { CitationTool } from '../tools/CitationTool';
+import { DatabaseTool } from '../tools/DatabaseTool';
 import { createLLMConfig } from './AgentConfig';
 
 export interface ResearchAgentConfig {
@@ -36,12 +37,14 @@ Tool Formats:
 - search_tool: {"query": "search terms", "maxResults": 10, "extractContent": true}
 - analysis_tool: {"content": "text from search results", "analysisType": "comprehensive"}
 - summarization_tool: {"content": "text to summarize", "summaryType": "executive", "maxLength": 200}
-- citation_tool: {"action": "create", "source": {"url": "...", "title": "...", "author": "..."}, "format": "apa"}`,
+- citation_tool: {"action": "create", "source": {"url": "...", "title": "...", "author": "..."}, "format": "apa"}
+- database_tool: {"action": "store", "sessionId": "...", "data": {...}} or {"action": "retrieve_sources", "sessionId": "..."}`,
     tools: [
       new SearchTool() as any,
       new AnalysisTool() as any,
       new SummarizationTool() as any,
-      new CitationTool() as any
+      new CitationTool() as any,
+      new DatabaseTool() as any
     ],
     llmConfig: createLLMConfig({
       provider: config.llmConfig.provider,
