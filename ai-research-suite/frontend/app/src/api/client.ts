@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/prefer-promise-reject-errors */
+/* eslint-disable @typescript-eslint/consistent-type-imports */
 import axios, { AxiosInstance, AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { TokenManager } from './auth/TokenManager';
 import { getEnvironment } from '../config/environment';
@@ -43,14 +45,14 @@ api.interceptors.response.use(
   (response) => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
-    
+
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       if (originalRequest.url?.includes('/auth/refresh')) {
         TokenManager.clearTokens();
         window.location.href = '/login';
         return Promise.reject(error);
       }
-      
+
       if (isRefreshing) {
         return new Promise((resolve) => {
           subscribeTokenRefresh((token: string) => {
@@ -61,22 +63,22 @@ api.interceptors.response.use(
           });
         });
       }
-      
+
       originalRequest._retry = true;
       isRefreshing = true;
-      
+
       try {
         const refreshToken = TokenManager.getRefreshToken();
         if (!refreshToken) {
           throw new Error('No refresh token available');
         }
-        
+
         const response = await api.post('/auth/refresh', { refreshToken });
         const { token, refreshToken: newRefreshToken, expiresIn } = response.data.data;
-        
+
         TokenManager.setTokens(token, newRefreshToken, expiresIn);
         onTokenRefreshed(token);
-        
+
         if (originalRequest.headers) {
           originalRequest.headers.Authorization = `Bearer ${token}`;
         }
@@ -89,7 +91,7 @@ api.interceptors.response.use(
         isRefreshing = false;
       }
     }
-    
+
     return Promise.reject(error);
   }
 );

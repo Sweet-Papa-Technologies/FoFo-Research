@@ -119,7 +119,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
+import { ref, computed, onMounted, onUnmounted, onBeforeUnmount, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useResearchStore } from '../../stores/research';
@@ -132,6 +132,7 @@ const researchStore = useResearchStore();
 const loading = ref(true);
 const cancelling = ref(false);
 const retrying = ref(false);
+let isMounted = true;
 
 const currentSession = computed(() => researchStore.currentSession);
 const currentSources = computed(() => researchStore.currentSources);
@@ -147,6 +148,7 @@ watch(() => route.params.id, (newId) => {
 }, { immediate: true });
 
 onMounted(async () => {
+  isMounted = true;
   try {
     await researchStore.fetchSessionHistory();
     
@@ -165,8 +167,16 @@ onMounted(async () => {
   }
 });
 
+onBeforeUnmount(() => {
+  isMounted = false;
+});
+
 onUnmounted(() => {
+  isMounted = false;
   // Clean up any session-specific listeners if needed
+  if (currentSession.value) {
+    void researchStore.stopWatchingSession();
+  }
 });
 
 async function selectSession(sessionId: string) {
@@ -194,9 +204,10 @@ async function cancelResearch() {
     cancel: true,
     persistent: true
   }).onOk(async () => {
+    if (!isMounted) return;
     cancelling.value = true;
     try {
-      if (!currentSession.value) return;
+      if (!currentSession.value || !isMounted) return;
       await researchStore.cancelResearch(currentSession.value.id);
       
       $q.notify({
@@ -206,7 +217,7 @@ async function cancelResearch() {
       });
       
       // Select another session if available
-      if (activeSessions.value.length > 0) {
+      if (isMounted && activeSessions.value.length > 0) {
         void selectSession(activeSessions.value[0].id);
       }
     } catch (error) {
@@ -216,7 +227,9 @@ async function cancelResearch() {
         position: 'top'
       });
     } finally {
-      cancelling.value = false;
+      if (isMounted) {
+        cancelling.value = false;
+      }
     }
   });
 }

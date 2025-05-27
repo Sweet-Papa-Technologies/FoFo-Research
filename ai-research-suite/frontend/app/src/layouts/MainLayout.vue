@@ -23,7 +23,7 @@
           :icon="$q.dark.isActive ? 'light_mode' : 'dark_mode'"
           @click="$q.dark.toggle"
         />
-        
+
         <q-btn flat round icon="account_circle">
           <q-menu>
             <q-list style="min-width: 200px">
@@ -33,16 +33,16 @@
                   <q-item-label caption>{{ authStore.user.role }}</q-item-label>
                 </q-item-section>
               </q-item>
-              
+
               <q-separator />
-              
+
               <q-item clickable v-close-popup to="/settings">
                 <q-item-section avatar>
                   <q-icon name="settings" />
                 </q-item-section>
                 <q-item-section>Settings</q-item-section>
               </q-item>
-              
+
               <q-item clickable v-close-popup @click="logout">
                 <q-item-section avatar>
                   <q-icon name="logout" />
@@ -117,16 +117,17 @@ async function logout() {
   try {
     await authStore.logout();
     await router.push('/login');
-    
+
     $q.notify({
       type: 'positive',
       message: 'Successfully logged out',
       position: 'top'
     });
   } catch (error) {
+    console.error(error);
     $q.notify({
       type: 'negative',
-      message: 'Logout failed',
+      message: 'Logout failed ',
       position: 'top'
     });
   }

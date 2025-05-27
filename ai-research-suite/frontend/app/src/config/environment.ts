@@ -7,9 +7,11 @@ export interface EnvironmentConfig {
 export const getEnvironment = (): EnvironmentConfig => {
   const isDevelopment = process.env.NODE_ENV === 'development';
   
+  // Use relative URL so the proxy works for both HTTP and WebSocket
+  // The proxy in quasar.config.ts handles /socket.io with ws: true
   return {
     apiUrl: '', // Use relative URL so proxy works
-    wsUrl: isDevelopment ? `ws://${window.location.host}` : `ws://${window.location.host}`,
+    wsUrl: '', // Use relative URL so proxy works for WebSocket too
     isDevelopment
   };
 };
