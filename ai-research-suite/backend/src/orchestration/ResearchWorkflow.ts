@@ -71,12 +71,19 @@ export class ResearchWorkflow {
     
     const writingTask = new Task({
       description: `Create a well-structured report from the search results and analysis.
-      Use ONLY the information found in the search results from previous tasks.
-      Include all sources with proper citations.
-      Format: ${this.config.parameters.reportLength} report in markdown.
+      
+      CRITICAL REQUIREMENTS:
+      1. Use ONLY the information found in the search results from previous tasks
+      2. Include ALL sources that were searched with proper citations (Organization, Date, Title, URL)
+      3. NEVER cite "Internal Research Data" - use the actual sources from search results
+      4. Include expert predictions, betting odds, and statistical analysis found in the sources
+      5. Format: ${this.config.parameters.reportLength} report in markdown
+      
+      The research agent found sources from ESPN, Fox Sports, NBA.com, etc. You MUST cite these actual sources.
+      Include predictions about who will win, current series standings, expert analysis, and betting odds.
       Base your report on the research findings and analysis from previous tasks.`,
       agent: writerAgent,
-      expectedOutput: 'Final formatted research report based on actual search findings'
+      expectedOutput: 'Final formatted research report with proper citations to all searched sources'
     });
     
     logger.info('Creating team...');
