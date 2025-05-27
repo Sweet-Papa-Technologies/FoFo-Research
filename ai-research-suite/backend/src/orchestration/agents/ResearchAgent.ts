@@ -38,7 +38,8 @@ Tool Formats:
 - analysis_tool: {"content": "text from search results", "analysisType": "comprehensive"}
 - summarization_tool: {"content": "text to summarize", "summaryType": "executive", "maxLength": 200}
 - citation_tool: {"action": "create", "source": {"url": "...", "title": "...", "author": "..."}, "format": "apa"}
-- database_tool: {"action": "store", "sessionId": "...", "data": {...}} or {"action": "retrieve_sources", "sessionId": "..."}`,
+- database_tool for storing: {"action": "store", "sessionId": "...", "data": {"dataType": "extracted_content", "source": {"url": "...", "title": "...", "author": "...", "publishedDate": "..."}, "content": "...", "summary": "..."}}
+- database_tool for retrieving: {"action": "retrieve_sources", "sessionId": "...", "limit": 20}`,
     tools: [
       new SearchTool() as any,
       new AnalysisTool() as any,

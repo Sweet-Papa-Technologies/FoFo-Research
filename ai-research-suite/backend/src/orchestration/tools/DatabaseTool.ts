@@ -4,10 +4,30 @@ import { ResearchDataService } from '../../services/ResearchDataService';
 import { logger } from '../../utils/logger';
 
 const databaseToolSchema = z.object({
-  action: z.enum(['retrieve_sources', 'retrieve_analysis', 'get_summary'])
+  action: z.enum(['store', 'retrieve_sources', 'retrieve_analysis', 'get_summary'])
     .describe('The action to perform'),
   sessionId: z.string()
-    .describe('The session ID to retrieve data for'),
+    .describe('The session ID for the operation'),
+  data: z.object({
+    dataType: z.enum(['search_results', 'source_content', 'extracted_content', 'analysis'])
+      .describe('Type of data being stored'),
+    query: z.string().optional()
+      .describe('The search query that generated this data'),
+    source: z.object({
+      url: z.string(),
+      title: z.string(),
+      author: z.string().optional(),
+      publishedDate: z.string().optional()
+    }).optional()
+      .describe('Source metadata'),
+    content: z.string()
+      .describe('The actual content to store'),
+    summary: z.string().optional()
+      .describe('Summary of the content'),
+    metadata: z.any().optional()
+      .describe('Additional metadata')
+  }).optional()
+    .describe('Data to store (required for store action)'),
   dataType: z.enum(['search_results', 'source_content', 'analysis', 'all'])
     .optional()
     .describe('Type of data to retrieve'),
@@ -19,7 +39,7 @@ const databaseToolSchema = z.object({
 
 export class DatabaseTool extends StructuredTool<typeof databaseToolSchema> {
   name = 'database_tool';
-  description = 'Retrieve research data stored in the database for analysis and report writing';
+  description = 'Store or retrieve research data in the database for analysis and report writing';
   schema = databaseToolSchema;
   private dataService: ResearchDataService;
   
@@ -30,11 +50,42 @@ export class DatabaseTool extends StructuredTool<typeof databaseToolSchema> {
 
   async _call(input: z.infer<typeof databaseToolSchema>): Promise<string> {
     try {
-      const { action, sessionId, limit } = input;
+      const { action, sessionId, data, limit } = input;
       
       logger.info(`Database tool action: ${action} for session: ${sessionId}`);
       
       switch (action) {
+        case 'store': {
+          if (!data) {
+            throw new Error('Data is required for store action');
+          }
+          
+          const storedId = await this.dataService.storeResearchData({
+            sessionId,
+            dataType: data.dataType,
+            query: data.query || '',
+            title: data.source?.title || 'Untitled',
+            content: data.content,
+            metadata: {
+              url: data.source?.url,
+              author: data.source?.author,
+              publishedDate: data.source?.publishedDate,
+              summary: data.summary,
+              ...data.metadata
+            },
+            relevanceScore: data.metadata?.relevanceScore || 0.8
+          });
+          
+          logger.info(`Stored ${data.dataType} with ID: ${storedId}`);
+          
+          return JSON.stringify({
+            success: true,
+            message: `Data stored successfully`,
+            id: storedId,
+            dataType: data.dataType
+          });
+        }
+        
         case 'retrieve_sources': {
           const sources = await this.dataService.getSessionResearchData(
             sessionId,
@@ -42,12 +93,21 @@ export class DatabaseTool extends StructuredTool<typeof databaseToolSchema> {
             limit
           );
           
-          logger.info(`Retrieved ${sources.length} sources for session ${sessionId}`);
+          // Also get extracted content
+          const extractedContent = await this.dataService.getSessionResearchData(
+            sessionId,
+            'extracted_content',
+            limit
+          );
+          
+          const allSources = [...sources, ...extractedContent];
+          
+          logger.info(`Retrieved ${allSources.length} sources for session ${sessionId}`);
           
           return JSON.stringify({
             success: true,
-            count: sources.length,
-            sources: sources.map(s => ({
+            count: allSources.length,
+            sources: allSources.map(s => ({
               id: s.id,
               title: s.title,
               content: s.content,
@@ -55,7 +115,7 @@ export class DatabaseTool extends StructuredTool<typeof databaseToolSchema> {
               author: s.metadata?.author,
               publishedDate: s.metadata?.publishedDate,
               query: s.query,
-              relevance: s.relevanceScore
+              relevance: s.relevanceScore || 0
             }))
           });
         }

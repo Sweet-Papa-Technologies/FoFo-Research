@@ -158,7 +158,8 @@ export class ResearchWorkflow {
       The report should be comprehensive, well-structured, and properly cited.`,
       agent: writerAgent,
       dependencies: ['analysis'],
-      expectedOutput: 'Final formatted research report in markdown with proper citations'
+      expectedOutput: 'Final formatted research report in markdown with proper citations',
+      isDeliverable: true
     });
     
     logger.info('Creating team...');
@@ -170,7 +171,41 @@ export class ResearchWorkflow {
         topic: config.topic,
         sessionId: config.sessionId,
         parameters: config.parameters
-      }
+      },
+      memory: true, // Enable full context sharing between tasks
+      insights: `
+        Research Standards and Guidelines:
+        
+        1. Source Quality Requirements:
+           - Prioritize recent sources (within last 6 months for current events)
+           - Use reputable news outlets, official statistics, and expert analysis
+           - Verify information across multiple sources when possible
+           
+        2. Research Coverage:
+           - Always include multiple perspectives on controversial topics
+           - Cover predictions, odds, statistics, and expert opinions
+           - Look for both quantitative data and qualitative insights
+           
+        3. Citation Standards:
+           - Every claim must be backed by a source
+           - Include publication date, author/organization, and URL
+           - Never use generic citations like "Internal Research Data"
+           
+        4. Report Structure:
+           - Executive Summary: 2-3 paragraphs highlighting key findings
+           - Key Findings: 3-5 bullet points with most important insights
+           - Main Sections: Organized by theme with clear subheadings
+           - References: Full citation list at the end
+           
+        5. Writing Style:
+           - Professional, objective tone
+           - Clear and concise language
+           - Use data and statistics to support arguments
+           - Highlight actionable insights and implications
+           
+        Current Date: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
+        Session ID: ${config.sessionId}
+      `
     });
     
     // Set up workflow monitoring

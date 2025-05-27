@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 export interface ResearchData {
   id?: string;
   sessionId: string;
-  dataType: 'search_results' | 'analysis' | 'source_content' | 'game_plan';
+  dataType: 'search_results' | 'analysis' | 'source_content' | 'game_plan' | 'extracted_content';
   query?: string;
   title?: string;
   content: string;
@@ -40,7 +40,7 @@ export class ResearchDataService {
         query: data.query,
         title: data.title,
         content: data.content,
-        metadata: data.metadata ? JSON.stringify(data.metadata) : null,
+        metadata: data.metadata || null,
         relevance_score: data.relevanceScore || 0
       });
       
@@ -98,7 +98,7 @@ export class ResearchDataService {
         query: data.query,
         title: data.title,
         content: data.content,
-        metadata: data.metadata ? JSON.parse(data.metadata) : null,
+        metadata: data.metadata || null,
         relevanceScore: data.relevance_score,
         createdAt: data.created_at
       };
@@ -139,7 +139,7 @@ export class ResearchDataService {
         query: item.query,
         title: item.title,
         content: item.content,
-        metadata: item.metadata ? JSON.parse(item.metadata) : null,
+        metadata: item.metadata || null,
         relevanceScore: item.relevance_score,
         createdAt: item.created_at
       }));
