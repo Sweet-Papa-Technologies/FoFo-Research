@@ -44,7 +44,7 @@ Action Input: {"action": "retrieve_sources", "sessionId": "[session-id]", "limit
       provider: config.llmConfig.provider,
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.3,
-      maxTokens: config.llmConfig.maxTokens || 2000
-    })
+      maxTokens: config.llmConfig.maxTokens || 32000
+    }, 25)
   });
 }

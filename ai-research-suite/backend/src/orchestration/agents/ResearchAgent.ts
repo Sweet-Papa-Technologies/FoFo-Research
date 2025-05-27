@@ -51,13 +51,15 @@ When storing data, the actionInput must have this exact structure:
     "source": {
       "url": "https://...",
       "title": "Article Title",
-      "author": "Author Name",
-      "publishedDate": "2025-05-27"
+      "author": "Author Name or null if not available",
+      "publishedDate": "2025-05-27 or null if not available"
     },
     "content": "The full article content...",
     "summary": "A brief summary..."
   }
-}`,
+}
+
+IMPORTANT: You MUST store EVERY piece of content you extract from search results using the database_tool. The WriterAgent depends on this stored data to create the report.`,
     tools: [
       new SearchTool() as any,
       new AnalysisTool() as any,
@@ -69,7 +71,7 @@ When storing data, the actionInput must have this exact structure:
       provider: config.llmConfig.provider,
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.7,
-      maxTokens: config.llmConfig.maxTokens || 2000
-    })
+      maxTokens: config.llmConfig.maxTokens || 32000
+    }, 100)
   });
 }

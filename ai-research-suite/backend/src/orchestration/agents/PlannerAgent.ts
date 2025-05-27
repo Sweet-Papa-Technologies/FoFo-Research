@@ -38,7 +38,7 @@ QUERY GENERATION GUIDELINES:
       provider: config.llmConfig.provider,
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.3,
-      maxTokens: config.llmConfig.maxTokens || 1000
-    })
+      maxTokens: config.llmConfig.maxTokens || 5000
+    }, 25)
   });
 }

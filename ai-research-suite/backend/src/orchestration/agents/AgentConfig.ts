@@ -7,18 +7,20 @@ export interface AgentLLMConfig {
   maxTokens?: number;
   apiKey?: string;
   baseUrl?: string;
+  maxIterations?: number;
 }
 
-export function createLLMConfig(overrides: Partial<AgentLLMConfig> = {}): any {
+export function createLLMConfig(overrides: Partial<AgentLLMConfig> = {}, maxIterations=10): any {
   // Create LLM configuration for KaibanJS
   const provider = overrides.provider || config.litellm.provider || 'openai';
   const llmConfig: any = {
     provider,
     model: overrides.model || config.litellm.defaultModel,
     temperature: overrides.temperature || 0.7,
-    maxTokens: overrides.maxTokens || 2000,
+    maxTokens: overrides.maxTokens || 32000,
     apiKey: overrides.apiKey || config.litellm.apiKey,
-    maxRetries: 2
+    maxRetries: 3,
+    maxIterations: overrides.maxIterations || maxIterations
   };
 
   // Only add baseUrl for custom endpoints (not for standard providers)

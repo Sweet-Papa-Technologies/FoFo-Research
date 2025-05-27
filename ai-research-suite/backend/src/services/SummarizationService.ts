@@ -33,7 +33,7 @@ export class SummarizationService {
       logger.info(`Summarizing content from: ${url}`);
       
       // Truncate content if it's too long (to fit within LLM context limits)
-      const maxContentLength = 4000;
+      const maxContentLength = 30000; // Leave room for prompts and system messages
       const truncatedContent = content.length > maxContentLength 
         ? content.substring(0, maxContentLength) + '...' 
         : content;
@@ -46,7 +46,7 @@ export class SummarizationService {
         background: `You are an expert at analyzing and summarizing web content. You excel at identifying key information, main ideas, and relevant details.
 Always respond with valid JSON in the exact format specified.`,
         llmConfig: createLLMConfig(),
-        maxIterations: 3
+        maxIterations: 25
       });
       
       const taskDescription = `Analyze and summarize the following web content in the context of the search query "${searchQuery}".

@@ -64,7 +64,7 @@ export class LiteLLMService {
         model,
         messages,
         temperature: options.temperature || 0.7,
-        max_tokens: options.maxTokens || 2000,
+        max_tokens: options.maxTokens || 32000,
         top_p: options.topP || 1,
         stream: false
       };
@@ -133,7 +133,7 @@ export class LiteLLMService {
         model,
         messages,
         temperature: options.temperature || 0.7,
-        max_tokens: options.maxTokens || 2000,
+        max_tokens: options.maxTokens || 32000,
         stream: true
       };
       
@@ -199,18 +199,18 @@ export class LiteLLMService {
   getModelConfig(model: string): LLMConfig {
     // Model-specific configurations
     const modelConfigs: Record<string, Partial<LLMConfig>> = {
-      'gpt-4': { temperature: 0.7, maxTokens: 4000 },
-      'gpt-3.5-turbo': { temperature: 0.7, maxTokens: 2000 },
-      'claude-3-opus': { temperature: 0.5, maxTokens: 4000 },
-      'claude-3-sonnet': { temperature: 0.5, maxTokens: 4000 },
-      'llama2': { temperature: 0.8, maxTokens: 2000 },
-      'mistral': { temperature: 0.7, maxTokens: 2000 },
-      'mixtral': { temperature: 0.7, maxTokens: 4000 }
+      'gpt-4': { temperature: 0.7, maxTokens: 32000 },
+      'gpt-3.5-turbo': { temperature: 0.7, maxTokens: 32000 },
+      'claude-3-opus': { temperature: 0.5, maxTokens: 32000 },
+      'claude-3-sonnet': { temperature: 0.5, maxTokens: 32000 },
+      'llama2': { temperature: 0.8, maxTokens: 32000 },
+      'mistral': { temperature: 0.7, maxTokens: 32000 },
+      'mixtral': { temperature: 0.7, maxTokens: 32000 }
     };
     
     return {
       model,
-      ...modelConfigs[model] || { temperature: 0.7, maxTokens: 2000 }
+      ...modelConfigs[model] || { temperature: 0.7, maxTokens: 32000 }
     };
   }
 }

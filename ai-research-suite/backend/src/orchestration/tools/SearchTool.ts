@@ -149,7 +149,7 @@ export class SearchTool extends StructuredTool<typeof searchToolSchema> {
           score: result.score || 0,
           extractedAt: new Date().toISOString(),
           extractedContent: {
-            fullText: extractedContent.content.substring(0, 500) + '...', // Truncated for response size
+            fullText: extractedContent.content.substring(0, 5000) + '...', // Truncated for response size
             textLength: extractedContent.textLength,
             summary: summary.summary,
             keyPoints: summary.keyPoints,

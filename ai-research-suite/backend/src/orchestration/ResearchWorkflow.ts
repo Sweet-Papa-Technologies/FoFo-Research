@@ -86,7 +86,10 @@ export class ResearchWorkflow {
       Instructions:
       1. Extract the search queries from the planning task output
       2. Execute each query using search_tool in priority order
-      3. For each search result, extract and store the content using database_tool
+      3. For EVERY search result with extracted content, YOU MUST:
+         a. First use search_tool to get the content
+         b. Then IMMEDIATELY use database_tool with action:"store" to save it
+         c. Do NOT skip storing any extracted content
       4. Track the total number of sources stored
       5. Stop searching once you reach ${config.parameters.maxSources} sources
       6. Ensure you collect at least ${config.parameters.minSources} high-quality sources
@@ -183,7 +186,7 @@ export class ResearchWorkflow {
       name: 'AI Research Team',
       agents: [plannerAgent, researchAgent, analystAgent, writerAgent],
       tasks: [planningTask, researchTask, analysisTask, writingTask],
-      logLevel: 'debug',
+      // logLevel: 'debug',
       inputs: {
         topic: config.topic,
         sessionId: config.sessionId,

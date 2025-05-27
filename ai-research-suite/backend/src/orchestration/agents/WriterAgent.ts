@@ -97,7 +97,7 @@ IMPORTANT Tool Usage Guidelines:
       provider: config.llmConfig.provider,
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.5,
-      maxTokens: config.llmConfig.maxTokens || 4000
-    })
+      maxTokens: config.llmConfig.maxTokens || 32000
+    }, 30)
   });
 }

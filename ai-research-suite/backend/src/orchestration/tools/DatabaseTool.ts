@@ -16,8 +16,8 @@ const databaseToolSchema = z.object({
     source: z.object({
       url: z.string(),
       title: z.string(),
-      author: z.string().optional(),
-      publishedDate: z.string().optional()
+      author: z.string().nullable().optional(),
+      publishedDate: z.string().nullable().optional()
     }).optional()
       .describe('Source metadata'),
     content: z.string()
@@ -68,8 +68,8 @@ export class DatabaseTool extends StructuredTool<typeof databaseToolSchema> {
             content: data.content,
             metadata: {
               url: data.source?.url,
-              author: data.source?.author,
-              publishedDate: data.source?.publishedDate,
+              author: data.source?.author || undefined,
+              publishedDate: data.source?.publishedDate || undefined,
               summary: data.summary,
               ...data.metadata
             },
