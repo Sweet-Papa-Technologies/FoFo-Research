@@ -13,6 +13,11 @@ RUN yarn install --frozen-lockfile || npm ci
 # Copy source code
 COPY app/ .
 
+# Fix esbuild platform-specific binaries
+RUN rm -rf node_modules/esbuild && \
+    rm -rf node_modules/.cache && \
+    yarn install --force || npm rebuild esbuild
+
 # Build Quasar app
 RUN yarn build || npm run build
 

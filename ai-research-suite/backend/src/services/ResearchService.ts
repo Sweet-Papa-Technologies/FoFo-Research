@@ -98,7 +98,7 @@ export class ResearchService {
       
       const [sessions, countResult] = await Promise.all([
         query.clone().limit(limit).offset(offset),
-        query.clone().count('* as total').first()
+        query.clone().clearOrder().count('* as total').first()
       ]);
       
       const total = countResult?.total || 0;

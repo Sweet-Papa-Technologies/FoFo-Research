@@ -1,5 +1,7 @@
 import { Server as SocketIOServer } from 'socket.io';
+import jwt from 'jsonwebtoken';
 import { logger } from './logger';
+import { config } from '../config';
 
 export enum WSEventType {
   SUBSCRIBE = 'subscribe',
@@ -43,8 +45,29 @@ let io: SocketIOServer;
 export function setupWebSockets(socketServer: SocketIOServer): void {
   io = socketServer;
 
+  // Add authentication middleware
+  io.use((socket, next) => {
+    const token = socket.handshake.auth?.token;
+    
+    if (!token) {
+      logger.warn(`WebSocket connection rejected: No token provided`);
+      return next(new Error('Authentication required'));
+    }
+
+    try {
+      const decoded = jwt.verify(token, config.jwt.secret) as any;
+      socket.data.userId = decoded.id;
+      socket.data.email = decoded.email;
+      logger.info(`WebSocket authenticated: ${decoded.email}`);
+      next();
+    } catch (error) {
+      logger.warn(`WebSocket authentication failed:`, error);
+      next(new Error('Invalid token'));
+    }
+  });
+
   io.on('connection', (socket) => {
-    logger.info(`Client connected: ${socket.id}`);
+    logger.info(`Client connected: ${socket.id} (user: ${socket.data.email})`);
 
     socket.on(WSEventType.SUBSCRIBE, ({ sessionId }: { sessionId: string }) => {
       socket.join(`research:${sessionId}`);
@@ -57,7 +80,7 @@ export function setupWebSockets(socketServer: SocketIOServer): void {
     });
 
     socket.on('disconnect', () => {
-      logger.info(`Client disconnected: ${socket.id}`);
+      logger.info(`Client disconnected: ${socket.id} (user: ${socket.data.email})`);
     });
   });
 }
