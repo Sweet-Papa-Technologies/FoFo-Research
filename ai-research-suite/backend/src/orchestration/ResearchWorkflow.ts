@@ -282,6 +282,8 @@ export class ResearchWorkflow {
       const result = await this.team.start();
       
       logger.info('Team workflow completed');
+      logger.info('Team start() result type:', typeof result);
+      logger.info('Team start() result:', JSON.stringify(result, null, 2));
       
       // Process and format the results
       return this.processResults(result);
@@ -297,39 +299,55 @@ export class ResearchWorkflow {
     }
   }
   
-  private processResults(result: any): any {
+  private processResults(teamResult: any): any {
     try {
       logger.info('Processing workflow results');
       
-      // Get the final result from the writing task
-      const teamStore = this.team.useStore();
-      const tasks = teamStore.getState().tasks;
-      const writingTaskResult = tasks.find((t: any) => t.id === 'writing')?.result;
-      
-      if (!writingTaskResult) {
-        logger.error('No writing task result found');
-        return {
-          report: '# Research Report\n\nNo report content was generated.',
-          summary: 'No summary available',
-          keyFindings: []
-        };
-      }
-      
-      // Parse the report content
+      // First check if we have a result from team.start()
       let report: string = '';
       
-      if (typeof writingTaskResult === 'string') {
-        report = writingTaskResult;
-      } else if (writingTaskResult && typeof writingTaskResult === 'object') {
-        if (typeof writingTaskResult.content === 'string') {
-          report = writingTaskResult.content;
-        } else if (typeof writingTaskResult.report === 'string') {
-          report = writingTaskResult.report;
-        } else {
-          report = JSON.stringify(writingTaskResult);
-        }
+      // The team.start() returns {status, result, stats}
+      if (teamResult && teamResult.status === 'FINISHED' && teamResult.result) {
+        logger.info('Using result from team.start()');
+        report = typeof teamResult.result === 'string' ? teamResult.result : JSON.stringify(teamResult.result);
       } else {
-        report = String(writingTaskResult);
+        // Fallback to checking task results directly
+        logger.info('Checking task results from store');
+        const teamStore = this.team.useStore();
+        const tasks = teamStore.getState().tasks;
+        
+        // Debug logging
+        logger.info(`Total tasks: ${tasks.length}`);
+        tasks.forEach((task: any, index: number) => {
+          logger.info(`Task ${index}: referenceId=${task.referenceId}, id=${task.id}, status=${task.status}, hasResult=${!!task.result}`);
+        });
+        
+        const writingTask = tasks.find((t: any) => t.referenceId === 'writing' || t.name === 'writing' || t.id === 'writing');
+        const writingTaskResult = writingTask?.result;
+        
+        if (!writingTaskResult) {
+          logger.error('No writing task result found');
+          return {
+            report: '# Research Report\n\nNo report content was generated.',
+            summary: 'No summary available',
+            keyFindings: []
+          };
+        }
+        
+        // Parse the report content from task result
+        if (typeof writingTaskResult === 'string') {
+          report = writingTaskResult;
+        } else if (writingTaskResult && typeof writingTaskResult === 'object') {
+          if (typeof writingTaskResult.content === 'string') {
+            report = writingTaskResult.content;
+          } else if (typeof writingTaskResult.report === 'string') {
+            report = writingTaskResult.report;
+          } else {
+            report = JSON.stringify(writingTaskResult);
+          }
+        } else {
+          report = String(writingTaskResult);
+        }
       }
       
       return {
@@ -341,7 +359,7 @@ export class ResearchWorkflow {
     } catch (error) {
       logger.error('Error processing results:', error);
       return {
-        report: result?.result || result || 'No report generated',
+        report: teamResult?.result || teamResult || 'No report generated',
         summary: 'Unable to extract summary',
         keyFindings: []
       };

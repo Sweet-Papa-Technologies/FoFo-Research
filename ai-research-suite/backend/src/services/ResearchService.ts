@@ -245,6 +245,8 @@ export class ResearchService {
       
       const report = await workflow.execute();
       
+      logger.debug('Workflow execute() returned:', JSON.stringify(report));
+      
       const reportId = await this.saveReport(sessionId, report);
       
       await this.updateSessionStatus(sessionId, 'completed', {
@@ -289,8 +291,8 @@ export class ResearchService {
   private async saveReport(sessionId: string, report: any): Promise<string> {
     const reportId = uuidv4();
     
-    // Ensure content is a string
-    let content = report.content;
+    // Ensure content is a string - check both report.report and report.content for compatibility
+    let content = report.report || report.content || report;
     if (typeof content !== 'string') {
       logger.warn('Report content is not a string, converting:', typeof content);
       content = JSON.stringify(content);
@@ -302,7 +304,7 @@ export class ResearchService {
       content: content,
       summary: report.summary || '',
       key_findings: JSON.stringify(report.keyFindings || []),
-      word_count: content.split(/\s+/).length,
+      word_count: content ? content.split(/\s+/).length : 0,
       created_at: new Date()
     });
     
