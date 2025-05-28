@@ -84,19 +84,19 @@
               <q-item-section>
                 <q-item-label class="ellipsis">{{ session.topic }}</q-item-label>
                 <q-item-label caption>
-                  {{ session.progress.currentPhase }}
+                  {{ session.progress?.currentPhase || 'initializing' }}
                 </q-item-label>
               </q-item-section>
               <q-item-section side>
                 <q-circular-progress
-                  :value="session.progress.percentage"
+                  :value="session.progress?.percentage || 0"
                   size="40px"
                   :thickness="0.2"
                   color="primary"
                   track-color="grey-3"
                 >
                   <div class="text-caption">
-                    {{ session.progress.percentage }}%
+                    {{ session.progress?.percentage || 0 }}%
                   </div>
                 </q-circular-progress>
               </q-item-section>
@@ -142,7 +142,7 @@ const activeSessions = computed(() =>
 );
 
 watch(() => route.params.id, (newId) => {
-  if (newId && typeof newId === 'string' && isMounted) {
+  if (newId && typeof newId === 'string' && newId !== 'undefined' && isMounted) {
     selectSession(newId);
   }
 }, { immediate: false });
@@ -154,7 +154,7 @@ onMounted(async () => {
     
     // If there's an ID in the route, select that session
     const sessionId = route.params.id;
-    if (sessionId && typeof sessionId === 'string') {
+    if (sessionId && typeof sessionId === 'string' && sessionId !== 'undefined') {
       await selectSession(sessionId);
     } else if (activeSessions.value.length > 0) {
       // Otherwise select the first active session
@@ -180,6 +180,12 @@ onUnmounted(() => {
 });
 
 async function selectSession(sessionId: string) {
+  // Validate sessionId before making API call
+  if (!sessionId || sessionId === 'undefined') {
+    console.warn('Invalid session ID:', sessionId);
+    return;
+  }
+  
   loading.value = true;
   try {
     await researchStore.fetchSession(sessionId);

@@ -35,7 +35,7 @@ export class ReportController {
       }
       
       // Format the report based on requested format
-      const formattedReport = this.formatReport(report, format as string);
+      const formattedReport = await this.formatReport(report, format as string);
       
       res.json({
         success: true,
@@ -74,7 +74,7 @@ export class ReportController {
       }
       
       // Format the report based on requested format
-      const formattedReport = this.formatReport(report, format as string);
+      const formattedReport = await this.formatReport(report, format as string);
       
       res.json({
         success: true,
@@ -233,7 +233,7 @@ export class ReportController {
     }
   }
   
-  private formatReport(report: any, format: string): any {
+  private async formatReport(report: any, format: string): Promise<any> {
     const keyFindings = typeof report.key_findings === 'string' 
       ? JSON.parse(report.key_findings) 
       : report.key_findings;
@@ -243,6 +243,12 @@ export class ReportController {
       : report.parameters;
     
     if (format === 'json') {
+      // Fetch sources for this session
+      const sources = await this.db('sources')
+        .where('session_id', report.session_id)
+        .orderBy('relevance_score', 'desc')
+        .select('id', 'url', 'title', 'summary', 'relevance_score', 'accessed_at');
+      
       return {
         id: report.id,
         sessionId: report.session_id,
@@ -250,8 +256,21 @@ export class ReportController {
         content: report.content,
         summary: report.summary,
         keyFindings,
-        wordCount: report.word_count,
         parameters,
+        metadata: {
+          wordCount: report.word_count || 0,
+          generatedAt: report.created_at,
+          readingTime: Math.ceil((report.word_count || 0) / 200), // Assuming 200 words per minute
+          version: '1.0.0'
+        },
+        sources: sources.map(source => ({
+          id: source.id,
+          url: source.url,
+          title: source.title,
+          summary: source.summary,
+          relevanceScore: source.relevance_score,
+          accessedAt: source.accessed_at
+        })),
         createdAt: report.created_at,
         sessionCreatedAt: report.session_created_at
       };

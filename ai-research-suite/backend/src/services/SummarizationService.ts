@@ -1,6 +1,7 @@
 import { logger } from '../utils/logger';
 import { Agent, Task, Team } from 'kaibanjs';
 import { createLLMConfig } from '../orchestration/agents/AgentConfig';
+import { config } from '../config';
 
 interface SummarizationResult {
   url: string;
@@ -45,8 +46,19 @@ export class SummarizationService {
         goal: 'Create concise, informative summaries of web content while extracting key points',
         background: `You are an expert at analyzing and summarizing web content. You excel at identifying key information, main ideas, and relevant details.
 Always respond with valid JSON in the exact format specified.`,
-        llmConfig: createLLMConfig(),
-        maxIterations: 25
+        llmConfig: config.litellm.provider !== 'groq' ? createLLMConfig({
+          provider: config.litellm.provider,
+          model: config.litellm.defaultModel,
+          temperature: 0.3,
+          maxTokens: 32000
+        }, 10) : undefined,
+        llmInstance: config.litellm.provider === 'groq' ? createLLMConfig({
+          provider: config.litellm.provider,
+          model: config.litellm.defaultModel,
+          temperature: 0.3,
+          maxTokens: 32000
+        }, 10) : undefined,
+        maxIterations: 10
       });
       
       const taskDescription = `Analyze and summarize the following web content in the context of the search query "${searchQuery}".

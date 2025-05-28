@@ -98,12 +98,18 @@ IMPORTANT Tool Usage Guidelines:
       new CitationTool() as any,
       new SummarizationTool() as any
     ],
-    llmConfig: createLLMConfig({
+    llmConfig: config.llmConfig.provider !== 'groq' ? createLLMConfig({
       provider: config.llmConfig.provider,
       model: config.llmConfig.model,
-      temperature: config.llmConfig.temperature || 0.5,
+      temperature: config.llmConfig.temperature || 0.3,
       maxTokens: config.llmConfig.maxTokens || 32000
-    }, 30),
+    }, 30) : undefined,
+    llmInstance: config.llmConfig.provider === 'groq' ? createLLMConfig({
+      provider: config.llmConfig.provider,
+      model: config.llmConfig.model,
+      temperature: config.llmConfig.temperature || 0.3,
+      maxTokens: config.llmConfig.maxTokens || 32000
+    }, 30) : undefined,
     maxIterations: 100
   });
 }

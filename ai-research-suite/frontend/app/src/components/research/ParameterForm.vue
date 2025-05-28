@@ -115,12 +115,22 @@ const sourceTypeOptions = [
   { label: 'Government Sources', value: 'government' }
 ];
 
+// Only emit when values actually change
 watch(localParameters, (newValue) => {
-  emit('update:modelValue', newValue);
+  emit('update:modelValue', { ...newValue });
 }, { deep: true });
 
+// Only update local state if props actually changed
 watch(() => props.modelValue, (newValue) => {
-  localParameters.value = { ...localParameters.value, ...newValue };
+  // Check if values are actually different before updating
+  const isDifferent = Object.keys(newValue).some(key => {
+    return JSON.stringify(newValue[key as keyof ResearchParameters]) !== 
+           JSON.stringify(localParameters.value[key as keyof ResearchParameters]);
+  });
+  
+  if (isDifferent) {
+    localParameters.value = { ...newValue };
+  }
 }, { deep: true });
 </script>
 

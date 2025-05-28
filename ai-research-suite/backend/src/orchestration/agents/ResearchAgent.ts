@@ -67,12 +67,18 @@ IMPORTANT: You MUST store EVERY piece of content you extract from search results
       new CitationTool() as any,
       new DatabaseTool() as any
     ],
-    llmConfig: createLLMConfig({
+    llmConfig: config.llmConfig.provider !== 'groq' ? createLLMConfig({
       provider: config.llmConfig.provider,
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.7,
       maxTokens: config.llmConfig.maxTokens || 32000
-    }, 100),
+    }, 100) : undefined,
+    llmInstance: config.llmConfig.provider === 'groq' ? createLLMConfig({
+      provider: config.llmConfig.provider,
+      model: config.llmConfig.model,
+      temperature: config.llmConfig.temperature || 0.7,
+      maxTokens: config.llmConfig.maxTokens || 32000
+    }, 100) : undefined,
     maxIterations: 100,
     forceFinalAnswer: true
   });

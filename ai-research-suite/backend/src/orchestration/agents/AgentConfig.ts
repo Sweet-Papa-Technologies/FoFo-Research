@@ -1,4 +1,6 @@
 import { config } from '../../config';
+import { ChatGroq } from "@langchain/groq";
+import { logger } from '../../utils/logger';
 
 export interface AgentLLMConfig {
   provider: string;
@@ -13,6 +15,15 @@ export interface AgentLLMConfig {
 export function createLLMConfig(overrides: Partial<AgentLLMConfig> = {}, maxIterations=10): any {
   // Create LLM configuration for KaibanJS
   const provider = overrides.provider || config.litellm.provider || 'openai';
+
+  if (provider === 'groq') {
+    logger.info('Using Groq provider -- ' + overrides.model || config.litellm.defaultModel);
+    const groqModel = new ChatGroq({
+      model: overrides.model || config.litellm.defaultModel,
+      apiKey: overrides.apiKey || config.litellm.apiKey,
+    });
+    return groqModel;
+  }
   const llmConfig: any = {
     provider,
     model: overrides.model || config.litellm.defaultModel,

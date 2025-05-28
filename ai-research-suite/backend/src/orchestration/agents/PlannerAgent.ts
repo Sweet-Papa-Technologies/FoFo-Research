@@ -36,12 +36,18 @@ QUERY GENERATION GUIDELINES:
 3. Use variations in phrasing to capture different search results
 4. Include specific terms that will find authoritative sources
 5. Consider that each query typically yields 5-10 sources`,
-    llmConfig: createLLMConfig({
-      provider: config.llmConfig.provider,
-      model: config.llmConfig.model,
-      temperature: config.llmConfig.temperature || 0.3,
-      maxTokens: config.llmConfig.maxTokens || 5000
-    }, 25),
+llmConfig: config.llmConfig.provider !== 'groq' ? createLLMConfig({
+  provider: config.llmConfig.provider,
+  model: config.llmConfig.model,
+  temperature: config.llmConfig.temperature || 0.3,
+  maxTokens: config.llmConfig.maxTokens || 5000
+}, 25) : undefined,
+llmInstance: config.llmConfig.provider === 'groq' ? createLLMConfig({
+  provider: config.llmConfig.provider,
+  model: config.llmConfig.model,
+  temperature: config.llmConfig.temperature || 0.3,
+  maxTokens: config.llmConfig.maxTokens || 5000
+}, 25) : undefined,
     maxIterations: 100
   });
 }

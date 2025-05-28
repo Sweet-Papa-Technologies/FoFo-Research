@@ -45,12 +45,18 @@ Action Input: {"action": "retrieve_sources", "sessionId": "[session-id]", "limit
       new FactCheckTool() as any,
       new RelevanceScoringTool() as any
     ],
-    llmConfig: createLLMConfig({
+    llmConfig: config.llmConfig.provider !== 'groq' ? createLLMConfig({
       provider: config.llmConfig.provider,
       model: config.llmConfig.model,
       temperature: config.llmConfig.temperature || 0.3,
       maxTokens: config.llmConfig.maxTokens || 32000
-    }, 25),
+    }, 25) : undefined,
+    llmInstance: config.llmConfig.provider === 'groq' ? createLLMConfig({
+      provider: config.llmConfig.provider,
+      model: config.llmConfig.model,
+      temperature: config.llmConfig.temperature || 0.3,
+      maxTokens: config.llmConfig.maxTokens || 32000
+    }, 25) : undefined,
     maxIterations: 100,
     forceFinalAnswer: true
   });
