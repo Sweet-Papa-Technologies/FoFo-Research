@@ -12,6 +12,12 @@ export interface ResearchSession {
   topic: string;
   status: 'pending' | 'processing' | 'completed' | 'failed' | 'cancelled';
   parameters: any;
+  progress: {
+    percentage: number;
+    currentPhase: string;
+    phasesCompleted: string[];
+    estimatedTimeRemaining?: number | null;
+  };
   createdAt: Date;
   startedAt?: Date;
   completedAt?: Date;
@@ -40,6 +46,12 @@ export class ResearchService {
       topic: params.topic,
       status: 'pending',
       parameters: params.parameters,
+      progress: {
+        percentage: 0,
+        currentPhase: 'initializing',
+        phasesCompleted: [],
+        estimatedTimeRemaining: null
+      },
       createdAt: now
     };
     
@@ -50,6 +62,7 @@ export class ResearchService {
         topic: session.topic,
         status: session.status,
         parameters: JSON.stringify(session.parameters),
+        progress: JSON.stringify(session.progress),
         created_at: session.createdAt
       });
       
@@ -341,6 +354,26 @@ export class ResearchService {
   }
   
   private formatSession(dbSession: any): ResearchSession {
+    // Parse progress if stored as JSON string
+    let progress = dbSession.progress;
+    if (typeof progress === 'string') {
+      try {
+        progress = JSON.parse(progress);
+      } catch {
+        progress = null;
+      }
+    }
+    
+    // Provide default progress if not set
+    if (!progress) {
+      progress = {
+        percentage: 0,
+        currentPhase: 'initializing',
+        phasesCompleted: [],
+        estimatedTimeRemaining: null
+      };
+    }
+    
     return {
       id: dbSession.id,
       userId: dbSession.user_id,
@@ -349,6 +382,7 @@ export class ResearchService {
       parameters: typeof dbSession.parameters === 'string' 
         ? JSON.parse(dbSession.parameters) 
         : dbSession.parameters,
+      progress: progress,
       createdAt: dbSession.created_at,
       startedAt: dbSession.started_at,
       completedAt: dbSession.completed_at,

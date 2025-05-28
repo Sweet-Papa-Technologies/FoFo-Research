@@ -19,18 +19,29 @@ export class ResearchService {
   }
   
   static async getSessionHistory(params?: ResearchListParams): Promise<PaginatedResponse<ResearchSession>> {
-    const response = await api.get<{ success: boolean; data: ResearchSession[] }>('/research', {
+    const response = await api.get<{ 
+      success: boolean; 
+      data: { 
+        sessions: ResearchSession[]; 
+        pagination: { 
+          page: number; 
+          limit: number; 
+          total: number; 
+          pages: number; 
+        } 
+      } 
+    }>('/research', {
       params
     });
     
-    // The backend might not return paginated format, so we'll handle it
-    const sessions = response.data.data;
+    // Backend returns { sessions: [...], pagination: {...} }
+    const { sessions, pagination } = response.data.data;
     return {
       data: sessions,
-      total: sessions.length,
-      page: params?.page || 1,
-      limit: params?.limit || 20,
-      totalPages: Math.ceil(sessions.length / (params?.limit || 20))
+      total: pagination.total,
+      page: pagination.page,
+      limit: pagination.limit,
+      totalPages: pagination.pages
     };
   }
   

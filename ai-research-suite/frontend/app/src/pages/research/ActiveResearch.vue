@@ -45,7 +45,7 @@
           
           <q-card-section>
             <progress-tracker
-              :progress="currentSession.progress"
+              :progress="currentSession.progress || { percentage: 0, currentPhase: 'initializing', phasesCompleted: [] }"
               :status="currentSession.status"
               :sources="currentSources"
               :report-id="currentSession.reportId || undefined"
@@ -142,10 +142,10 @@ const activeSessions = computed(() =>
 );
 
 watch(() => route.params.id, (newId) => {
-  if (newId && typeof newId === 'string') {
+  if (newId && typeof newId === 'string' && isMounted) {
     selectSession(newId);
   }
-}, { immediate: true });
+}, { immediate: false });
 
 onMounted(async () => {
   isMounted = true;

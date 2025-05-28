@@ -90,6 +90,7 @@
             color="primary" 
             @click="confirmResearch"
             :loading="loading"
+            v-close-popup
           />
         </q-card-actions>
       </q-card>
@@ -98,7 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed, nextTick } from 'vue';
 import { useRouter } from 'vue-router';
 import { useQuasar } from 'quasar';
 import { useResearchStore } from '../../stores/research';
@@ -151,7 +152,7 @@ function startResearch() {
 
 async function confirmResearch() {
   loading.value = true;
-  showConfirmDialog.value = false;
+  // Don't manually close the dialog here, let v-close-popup handle it
   
   try {
     const session = await researchStore.startResearch({
@@ -165,6 +166,10 @@ async function confirmResearch() {
       position: 'top'
     });
     
+    // Close dialog before navigation
+    showConfirmDialog.value = false;
+    await nextTick(); // Wait for dialog to close
+    
     await router.push(`/research/active/${session.id}`);
   } catch (error: any) {
     $q.notify({
@@ -173,7 +178,6 @@ async function confirmResearch() {
       position: 'top',
       timeout: 5000
     });
-  } finally {
     loading.value = false;
   }
 }
